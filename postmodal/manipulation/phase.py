@@ -1,13 +1,158 @@
 """Phase manipulation utilities for modal analysis."""
 
-from typing import Union
+from typing import Optional
 
 import numpy as np
 
 from ..validation import ModalValidator
 
 
-def unwrap_modeshape_phase(modeshape: np.ndarray, reference_dof: Union[int, str] = 0) -> np.ndarray:
+def align_phase(
+    modeshape: np.ndarray,
+    reference_dof: Optional[int] = None,
+) -> np.ndarray:
+    """Align the phase of a modeshape to a reference DOF.
+
+    This function aligns the phase of a modeshape by rotating it so that
+    the phase at a reference DOF is zero. If no reference DOF is specified,
+    the DOF with the largest magnitude is used.
+
+    Parameters
+    ----------
+    modeshape : np.ndarray
+        Complex modeshape array [n_dof]
+    reference_dof : Optional[int], optional
+        Index of the reference DOF, by default None
+
+    Returns
+    -------
+    np.ndarray
+        Phase-aligned modeshape [n_dof]
+
+    Notes
+    -----
+    The phase alignment is achieved by multiplying the modeshape by
+    :math:`e^{-i\\phi_{ref}}`, where :math:`\\phi_{ref}` is the phase
+    angle at the reference DOF.
+    """
+    if reference_dof is None:
+        # Use DOF with largest magnitude as reference
+        reference_dof = np.argmax(np.abs(modeshape))
+
+    # Get phase angle at reference DOF
+    phase_ref = np.angle(modeshape[reference_dof])
+
+    # Rotate modeshape to align phase
+    return modeshape * np.exp(-1j * phase_ref)
+
+
+def unwrap_phase(
+    modeshape: np.ndarray,
+    axis: Optional[int] = None,
+) -> np.ndarray:
+    """Unwrap the phase of a modeshape.
+
+    This function unwraps the phase angles of a modeshape to ensure
+    continuous phase variation. Phase unwrapping is useful for
+    analyzing phase distributions and identifying phase jumps.
+
+    Parameters
+    ----------
+    modeshape : np.ndarray
+        Complex modeshape array [n_dof]
+    axis : Optional[int], optional
+        Axis along which to unwrap phase, by default None
+
+    Returns
+    -------
+    np.ndarray
+        Modeshape with unwrapped phase [n_dof]
+
+    Notes
+    -----
+    Phase unwrapping is performed using numpy's unwrap function,
+    which adds or subtracts 2π to ensure phase continuity.
+    """
+    phase = np.angle(modeshape)
+    unwrapped_phase = np.unwrap(phase, axis=axis)
+    return np.abs(modeshape) * np.exp(1j * unwrapped_phase)
+
+
+def normalize_phase(
+    modeshape: np.ndarray,
+    method: str = "reference",
+    reference_dof: Optional[int] = None,
+) -> np.ndarray:
+    """Normalize the phase of a modeshape.
+
+    This function normalizes the phase of a modeshape using one of several methods:
+    - "reference": Align phase to a reference DOF
+    - "unwrap": Unwrap phase to ensure continuity
+    - "both": Apply both reference alignment and unwrapping
+
+    Parameters
+    ----------
+    modeshape : np.ndarray
+        Complex modeshape array [n_dof]
+    method : str, optional
+        Phase normalization method, by default "reference"
+    reference_dof : Optional[int], optional
+        Index of the reference DOF for reference method, by default None
+
+    Returns
+    -------
+    np.ndarray
+        Phase-normalized modeshape [n_dof]
+
+    Raises
+    ------
+    ValueError
+        If method is not one of ["reference", "unwrap", "both"]
+    """
+    if method not in ["reference", "unwrap", "both"]:
+        raise ValueError('method must be one of ["reference", "unwrap", "both"]')
+
+    result = modeshape.copy()
+
+    if method in ["reference", "both"]:
+        result = align_phase(result, reference_dof)
+
+    if method in ["unwrap", "both"]:
+        result = unwrap_phase(result)
+
+    return result
+
+
+def calculate_phase_distribution(
+    modeshape: np.ndarray,
+    bins: int = 36,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Calculate the phase angle distribution of a modeshape.
+
+    This function computes a histogram of phase angles in the modeshape,
+    which can be useful for analyzing phase clustering and identifying
+    dominant phase patterns.
+
+    Parameters
+    ----------
+    modeshape : np.ndarray
+        Complex modeshape array [n_dof]
+    bins : int, optional
+        Number of bins for the histogram, by default 36
+
+    Returns
+    -------
+    tuple[np.ndarray, np.ndarray]
+        Tuple containing (histogram, bin_edges)
+        - histogram: Array of phase angle counts
+        - bin_edges: Array of bin edges in radians
+    """
+    phase = np.angle(modeshape)
+    hist, edges = np.histogram(phase, bins=bins, range=(-np.pi, np.pi))
+    return hist, edges
+
+
+def unwrap_modeshape_phase(modeshape: np.ndarray, reference_dof: Optional[int] = None) -> np.ndarray:
     """Unwrap the phase of a modeshape or set of modeshapes.
 
     This function unwraps the phase of complex modeshapes to ensure smooth phase transitions
@@ -16,10 +161,10 @@ def unwrap_modeshape_phase(modeshape: np.ndarray, reference_dof: Union[int, str]
 
     Math:
     -----
-    For a mode shape :math:`\\vec{\Phi}_r`, the phase-unwrapped mode shape is:
+    For a mode shape :math:`\\vec{\\Phi}_r`, the phase-unwrapped mode shape is:
 
     .. math::
-        \\vec{\Phi}_{r, unwrapped} = |\\vec{\Phi}_r| e^{j\\theta_{unwrapped}}
+        \\vec{\\Phi}_{r, unwrapped} = |\\vec{\\Phi}_r| e^{j\\theta_{unwrapped}}
 
     Where :math:`\\theta_{unwrapped}` is the unwrapped phase angle relative to the reference DOF.
 
@@ -28,10 +173,10 @@ def unwrap_modeshape_phase(modeshape: np.ndarray, reference_dof: Union[int, str]
     modeshape : np.ndarray
         Single modeshape [n_dof] or set of modeshapes [n_modes x n_dof].
         Can be real or complex-valued.
-    reference_dof : Union[int, str], optional
+    reference_dof : Optional[int], optional
         Index of the reference degree of freedom (0-indexed) or "max".
         If "max", the DOF with maximum amplitude will be used as reference.
-        The phase at this DOF will be used as reference. Defaults to 0.
+        The phase at this DOF will be used as reference. By default None.
 
     Returns
     -------
@@ -47,7 +192,7 @@ def unwrap_modeshape_phase(modeshape: np.ndarray, reference_dof: Union[int, str]
     ModalValidator.validate(modeshape)
 
     # Handle the reference_dof parameter
-    if isinstance(reference_dof, (int, np.integer)):
+    if reference_dof is None or isinstance(reference_dof, (int, np.integer)):
         use_max_amplitude = False
     elif isinstance(reference_dof, str) and reference_dof.lower() == "max":
         use_max_amplitude = True
@@ -111,10 +256,10 @@ def wrap_modeshape_phase(modeshape: np.ndarray) -> np.ndarray:
 
     Math:
     -----
-    For a mode shape :math:`\\vec{\Phi}_r`, the phase-wrapped mode shape is:
+    For a mode shape :math:`\\vec{\\Phi}_r`, the phase-wrapped mode shape is:
 
     .. math::
-        \\vec{\Phi}_{r, wrapped} = |\\vec{\Phi}_r| e^{j\\theta_{wrapped}}
+        \\vec{\\Phi}_{r, wrapped} = |\\vec{\\Phi}_r| e^{j\\theta_{wrapped}}
 
     Where :math:`\\theta_{wrapped}` is the wrapped phase angle in [-π, π].
 
