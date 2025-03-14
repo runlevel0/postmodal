@@ -1,12 +1,13 @@
 """MAC matrix visualization module."""
 
-from typing import Optional
+from typing import Optional, cast
 
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.colors import Normalize
 from matplotlib.figure import Figure
+from matplotlib.projections.polar import PolarAxes
 from matplotlib.ticker import FixedFormatter, FixedLocator
 
 
@@ -85,7 +86,7 @@ def plot_mac_matrix(
     if ax is None:
         fig, ax = plt.subplots()
     else:
-        fig = ax.figure
+        fig = cast(Figure, ax.figure)
 
     # Validate dimensions
     if len(x_tick_labels) != mac_matrix.shape[1]:
@@ -155,20 +156,20 @@ def plot_mac_matrix(
 
 def plot_modeshape_complexity(
     modeshape: np.ndarray,
-    ax: Optional[Axes] = None,
-) -> tuple[Figure, Axes]:
+    ax: Optional[PolarAxes] = None,
+) -> tuple[Figure, PolarAxes]:
     """Plot the complexity of a modeshape using a polar Argand diagram.
 
     Parameters
     ----------
     modeshape : np.ndarray
         Complex modeshape vector
-    ax : Optional[Axes], optional
-        Matplotlib axes to plot on, by default None
+    ax : Optional[PolarAxes], optional
+        Matplotlib polar axes to plot on, by default None
 
     Returns
     -------
-    tuple[Figure, Axes]
+    tuple[Figure, PolarAxes]
         The figure and axes containing the complexity plot
 
     Raises
@@ -177,9 +178,10 @@ def plot_modeshape_complexity(
         If the provided axes is not a polar projection
     """
     if ax is None:
-        fig, ax = plt.subplots(subplot_kw={"projection": "polar"})
+        fig = plt.figure()
+        ax = cast(PolarAxes, fig.add_subplot(111, projection="polar"))
     else:
-        fig = ax.get_figure()
+        fig = cast(Figure, ax.get_figure())
         if ax.name != "polar":
             raise ValueError("Axes must be polar projection")
 
@@ -255,7 +257,7 @@ def plot_modeshape_complexity_grid(
     )
 
     for i in range(n_modes):
-        ax = axs.flatten()[i]
+        ax = cast(PolarAxes, axs.flatten()[i])
         _, _ = plot_modeshape_complexity(modeshapes[i], ax=ax)
         ax.set_title(f"{frequencies[i]:.2f} Hz")
 

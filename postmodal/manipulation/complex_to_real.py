@@ -51,7 +51,7 @@ def complex_to_real(
         # Use magnitude with sign from real part
         magnitude = np.abs(modeshape)
         sign = np.sign(np.real(modeshape))
-        return magnitude * sign
+        return np.array(magnitude * sign)
 
     else:  # projection
         # Project onto real axis
@@ -86,6 +86,7 @@ def complex_to_real_batch(
     --------
     complex_to_real : Convert a single complex modeshape
     """
+    # Explicitly cast the result to np.ndarray to satisfy the return type
     return np.array([complex_to_real(phi, method, reference_dof) for phi in modeshapes])
 
 
@@ -156,7 +157,8 @@ def optimize_conversion(
     """
     n_dof = len(modeshape)
     best_error = float("inf")
-    best_modeshape = None
+    # Initialize with a default value to ensure we never return None
+    best_modeshape = complex_to_real(modeshape, method, reference_dof)
     best_mag_error = 0.0
     best_phase_error = 0.0
 

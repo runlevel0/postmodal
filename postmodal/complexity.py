@@ -18,11 +18,11 @@ def calculate_mpc(modeshape: np.ndarray) -> np.ndarray:
     Math:
     -----
     .. math::
-        MPC_r = \\frac{ \\left| \\sum_{j=1}^{n} Re(\Phi_{jr}) \\right|^2 }{ \\sum_{j=1}^{n} |\\Phi_{jr}|^2 }
+        MPC_r = \\frac{ \\left| \\sum_{j=1}^{n} Re(\\Phi_{jr}) \\right|^2 }{ \\sum_{j=1}^{n} |\\Phi_{jr}|^2 }
 
     Where:
     - :math:`\\Phi_{jr}`: j-th component of the r-th complex mode shape.
-    - :math:`Re(\Phi_{jr})`: Real part of :math:`\\Phi_{jr}`.
+    - :math:`Re(\\Phi_{jr})`: Real part of :math:`\\Phi_{jr}`.
     - :math:`n`: Number of DOFs.
     - :math:`| ... |`: Magnitude (absolute value for scalar, modulus for complex).
 
@@ -81,11 +81,11 @@ def calculate_map(modeshape: np.ndarray) -> np.ndarray:
     Math:
     -----
     .. math::
-        MAP_r = \\frac{ \\sum_{j=1}^{n} |Re(\Phi_{jr})| }{ \\sum_{j=1}^{n} |\\Phi_{jr}| }
+        MAP_r = \\frac{ \\sum_{j=1}^{n} |Re(\\Phi_{jr})| }{ \\sum_{j=1}^{n} |\\Phi_{jr}| }
 
     Where:
     - :math:`\\Phi_{jr}`: j-th component of the r-th complex mode shape.
-    - :math:`Re(\Phi_{jr})`: Real part of :math:`\\Phi_{jr}`.
+    - :math:`Re(\\Phi_{jr})`: Real part of :math:`\\Phi_{jr}`.
     - :math:`n`: Number of DOFs.
     - :math:`| ... |`: Magnitude (absolute value for scalar, modulus for complex).
 
@@ -141,12 +141,12 @@ def calculate_ipr(modeshape: np.ndarray) -> np.ndarray:
     Math:
     -----
     .. math::
-        IPR_r = \\frac{ || Im(\\vec{\Phi}_r) || }{ || Re(\\vec{\Phi}_r) || }
+        IPR_r = \\frac{ || Im(\\vec{\\Phi}_r) || }{ || Re(\\vec{\\Phi}_r) || }
 
     Where:
-    - :math:`\\vec{\Phi}_r`: The r-th complex mode shape vector.
-    - :math:`Re(\\vec{\Phi}_r)`: Vector of real parts of :math:`\\vec{\Phi}_r`.
-    - :math:`Im(\\vec{\Phi}_r)`: Vector of imaginary parts of :math:`\\vec{\Phi}_r`.
+    - :math:`\\vec{\\Phi}_r`: The r-th complex mode shape vector.
+    - :math:`Re(\\vec{\\Phi}_r)`: Vector of real parts of :math:`\\vec{\\Phi}_r`.
+    - :math:`Im(\\vec{\\Phi}_r)`: Vector of imaginary parts of :math:`\\vec{\\Phi}_r`.
     - :math:`|| ... ||`: Vector norm (Euclidean norm - 2-norm).
 
     Parameters
@@ -164,13 +164,13 @@ def calculate_ipr(modeshape: np.ndarray) -> np.ndarray:
 
     Raises
     ------
-    ValueError
+    TypeError
         If the input `modeshape` is not a NumPy array.
     NotImplementedError
         If the input `modeshape` has dimensions other than 1 or 2.
     """
     if not isinstance(modeshape, np.ndarray):
-        raise ValueError("Input modeshape must be a NumPy array.")
+        raise TypeError("Input modeshape must be a NumPy array.")
 
     if modeshape.ndim == 1:
         real_part = modeshape.real
@@ -210,7 +210,7 @@ def calculate_cf(modeshape: np.ndarray) -> np.ndarray:
     Math:
     -----
     .. math::
-        CF_r = 1 - MPC_r = 1 - \\frac{ \\left| \\sum_{j=1}^{n} Re(\Phi_{jr}) \\right|^2 }{ \\sum_{j=1}^{n} |\\Phi_{jr}|^2 }
+        CF_r = 1 - MPC_r = 1 - \\frac{ \\left| \\sum_{j=1}^{n} Re(\\Phi_{jr}) \\right|^2 }{ \\sum_{j=1}^{n} |\\Phi_{jr}|^2 }
 
     Where:
     - :math:`MPC_r`: Modal Phase Collinearity for mode r, calculated using `calculate_mpc`.
@@ -230,13 +230,13 @@ def calculate_cf(modeshape: np.ndarray) -> np.ndarray:
 
     Raises
     ------
-    ValueError
+    TypeError
         If the input `modeshape` is not a NumPy array.
     NotImplementedError
         If the input `modeshape` has dimensions other than 1 or 2.
     """
     if not isinstance(modeshape, np.ndarray):
-        raise ValueError("Input modeshape must be a NumPy array.")
+        raise TypeError("Input modeshape must be a NumPy array.")
 
     mpc_values = calculate_mpc(modeshape)
 
@@ -283,13 +283,13 @@ def calculate_mpd(modeshape: np.ndarray) -> np.ndarray:
 
     Raises
     ------
-    ValueError
+    TypeError
         If the input `modeshape` is not a NumPy array.
     NotImplementedError
         If the input `modeshape` has dimensions other than 1 or 2.
     """
     if not isinstance(modeshape, np.ndarray):
-        raise ValueError("Input modeshape must be a NumPy array.")
+        raise TypeError("Input modeshape must be a NumPy array.")
 
     if modeshape.ndim == 1:
         phase_angles = np.angle(modeshape)  # radians

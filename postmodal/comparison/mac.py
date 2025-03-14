@@ -41,4 +41,6 @@ def calculate_mac(phi_1: np.ndarray, phi_2: np.ndarray) -> float:
     """
     ModalValidator.validate_pair(phi_1, phi_2)
 
-    return (np.abs(np.vdot(phi_1, phi_2)) ** 2 / (np.vdot(phi_1, phi_1) * np.vdot(phi_2, phi_2))).real
+    numerator = np.abs(np.vdot(phi_1, phi_2)) ** 2
+    denominator = np.vdot(phi_1, phi_1) * np.vdot(phi_2, phi_2)
+    return float((numerator / denominator).real)

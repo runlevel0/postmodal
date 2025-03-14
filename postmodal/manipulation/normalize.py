@@ -53,12 +53,12 @@ def normalize_modeshape_unit_norm_vector_length(modeshape: np.ndarray) -> np.nda
 
     Math:
     -----
-    For a mode shape :math:`\\vec{\Phi}_r`, the normalized mode shape :math:`\\vec{\Phi}_{r, normalized}` is:
+    For a mode shape :math:`\\vec{\\Phi}_r`, the normalized mode shape :math:`\\vec{\\Phi}_{r, normalized}` is:
 
     .. math::
-        \\vec{\Phi}_{r, normalized} = \\frac{\\vec{\Phi}_r}{||\\vec{\Phi}_r||_2}
+        \\vec{\\Phi}_{r, normalized} = \\frac{\\vec{\\Phi}_r}{||\\vec{\\Phi}_r||_2}
 
-    Where :math:`||\\vec{\Phi}_r||_2` is the Euclidean norm (2-norm) of the mode shape vector.
+    Where :math:`||\\vec{\\Phi}_r||_2` is the Euclidean norm (2-norm) of the mode shape vector.
 
     Parameters
     ----------
@@ -85,9 +85,7 @@ def normalize_modeshape_unit_norm_vector_length(modeshape: np.ndarray) -> np.nda
 
     # modeshape.ndim == 2
     norms = np.linalg.norm(modeshape, axis=1)
-    return np.where(
-        norms[:, np.newaxis] != 0, modeshape / norms[:, np.newaxis], modeshape
-    )
+    return np.where(norms[:, np.newaxis] != 0, modeshape / norms[:, np.newaxis], modeshape)
 
 
 def normalize_modeshape_unit_norm_max_amplitude(modeshape: np.ndarray) -> np.ndarray:
@@ -99,11 +97,11 @@ def normalize_modeshape_unit_norm_max_amplitude(modeshape: np.ndarray) -> np.nda
 
     Math:
     -----
-    For a mode shape :math:`\\vec{\Phi}_r`, let :math:`\\Phi_{max, r}` be the component with the maximum absolute value in :math:`\\vec{\Phi}_r`.
-    The normalized mode shape :math:`\\vec{\Phi}_{r, normalized}` is:
+    For a mode shape :math:`\\vec{\\Phi}_r`, let :math:`\\Phi_{max, r}` be the component with the maximum absolute value in :math:`\\vec{\\Phi}_r`.
+    The normalized mode shape :math:`\\vec{\\Phi}_{r, normalized}` is:
 
     .. math::
-        \\vec{\Phi}_{r, normalized} = \\frac{\\vec{\Phi}_r}{\\Phi_{max, r}}
+        \\vec{\\Phi}_{r, normalized} = \\frac{\\vec{\\Phi}_r}{\\Phi_{max, r}}
 
     Note: In case of multiple components having the same maximum magnitude, the first encountered component with maximum magnitude is used as the reference.
 
@@ -132,14 +130,10 @@ def normalize_modeshape_unit_norm_max_amplitude(modeshape: np.ndarray) -> np.nda
 
     # modeshape.ndim == 2
     max_vals = np.max(np.abs(modeshape), axis=1)
-    return np.where(
-        max_vals[:, np.newaxis] != 0, modeshape / max_vals[:, np.newaxis], modeshape
-    )
+    return np.where(max_vals[:, np.newaxis] != 0, modeshape / max_vals[:, np.newaxis], modeshape)
 
 
-def normalize_modeshape_reference_dof(
-    modeshape: np.ndarray, ref_dof_index: int
-) -> np.ndarray:
+def normalize_modeshape_reference_dof(modeshape: np.ndarray, ref_dof_index: int) -> np.ndarray:
     """Normalize a single modeshape or set of modeshapes using a reference degree of freedom (DOF).
 
     This normalization method scales each mode shape vector such that the component at the specified
@@ -149,11 +143,11 @@ def normalize_modeshape_reference_dof(
 
     Math:
     -----
-    For a mode shape :math:`\\vec{\Phi}_r` and a chosen reference DOF index `k` (ref_dof_index),
-    the normalized mode shape :math:`\\vec{\Phi}_{r, normalized}` is:
+    For a mode shape :math:`\\vec{\\Phi}_r` and a chosen reference DOF index `k` (ref_dof_index),
+    the normalized mode shape :math:`\\vec{\\Phi}_{r, normalized}` is:
 
     .. math::
-        \\vec{\Phi}_{r, normalized} = \\frac{\\vec{\Phi}_r}{\\Phi_{kr}}
+        \\vec{\\Phi}_{r, normalized} = \\frac{\\vec{\\Phi}_r}{\\Phi_{kr}}
 
     Where :math:`\\Phi_{kr}` is the component of the mode shape vector at the reference DOF index `k`.
 
@@ -192,10 +186,6 @@ def normalize_modeshape_reference_dof(
 
     # modeshape.ndim == 2
     if not 0 <= ref_dof_index < modeshape.shape[1]:
-        raise ValueError(
-            f"ref_dof_index {ref_dof_index} is out of bounds for modeshape with {modeshape.shape[1]} DOFs"
-        )
+        raise ValueError(f"ref_dof_index {ref_dof_index} is out of bounds for modeshape with {modeshape.shape[1]} DOFs")
     ref_vals = modeshape[:, ref_dof_index]
-    return np.where(
-        ref_vals[:, np.newaxis] != 0, modeshape / ref_vals[:, np.newaxis], modeshape
-    )
+    return np.where(ref_vals[:, np.newaxis] != 0, modeshape / ref_vals[:, np.newaxis], modeshape)

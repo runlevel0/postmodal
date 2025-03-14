@@ -1,16 +1,17 @@
 """Phase manipulation utilities for modal analysis."""
 
-from typing import Optional
+from typing import Optional, Union, cast
 
 import numpy as np
+from numpy.typing import NDArray
 
 from ..validation import ModalValidator
 
 
 def align_phase(
-    modeshape: np.ndarray,
+    modeshape: NDArray[np.complex128],
     reference_dof: Optional[int] = None,
-) -> np.ndarray:
+) -> NDArray[np.complex128]:
     """Align the phase of a modeshape to a reference DOF.
 
     This function aligns the phase of a modeshape by rotating it so that
@@ -35,21 +36,21 @@ def align_phase(
     :math:`e^{-i\\phi_{ref}}`, where :math:`\\phi_{ref}` is the phase
     angle at the reference DOF.
     """
-    if reference_dof is None:
-        # Use DOF with largest magnitude as reference
-        reference_dof = np.argmax(np.abs(modeshape))
+    ref_dof: int
+    # Use DOF with largest magnitude as reference if none provided
+    ref_dof = int(np.argmax(np.abs(modeshape))) if reference_dof is None else reference_dof
 
     # Get phase angle at reference DOF
-    phase_ref = np.angle(modeshape[reference_dof])
+    phase_ref = np.angle(modeshape[ref_dof])
 
     # Rotate modeshape to align phase
-    return modeshape * np.exp(-1j * phase_ref)
+    return cast(NDArray[np.complex128], modeshape * np.exp(-1j * phase_ref))
 
 
 def unwrap_phase(
-    modeshape: np.ndarray,
+    modeshape: NDArray[np.complex128],
     axis: Optional[int] = None,
-) -> np.ndarray:
+) -> NDArray[np.complex128]:
     """Unwrap the phase of a modeshape.
 
     This function unwraps the phase angles of a modeshape to ensure
@@ -74,15 +75,15 @@ def unwrap_phase(
     which adds or subtracts 2π to ensure phase continuity.
     """
     phase = np.angle(modeshape)
-    unwrapped_phase = np.unwrap(phase, axis=axis)
-    return np.abs(modeshape) * np.exp(1j * unwrapped_phase)
+    unwrapped_phase = np.unwrap(phase, axis=0 if axis is None else axis)
+    return cast(NDArray[np.complex128], np.abs(modeshape) * np.exp(1j * unwrapped_phase))
 
 
 def normalize_phase(
-    modeshape: np.ndarray,
+    modeshape: NDArray[np.complex128],
     method: str = "reference",
     reference_dof: Optional[int] = None,
-) -> np.ndarray:
+) -> NDArray[np.complex128]:
     """Normalize the phase of a modeshape.
 
     This function normalizes the phase of a modeshape using one of several methods:
@@ -124,9 +125,9 @@ def normalize_phase(
 
 
 def calculate_phase_distribution(
-    modeshape: np.ndarray,
+    modeshape: NDArray[np.complex128],
     bins: int = 36,
-) -> tuple[np.ndarray, np.ndarray]:
+) -> tuple[NDArray[np.int_], NDArray[np.float64]]:
     """Calculate the phase angle distribution of a modeshape.
 
     This function computes a histogram of phase angles in the modeshape,
@@ -152,7 +153,41 @@ def calculate_phase_distribution(
     return hist, edges
 
 
-def unwrap_modeshape_phase(modeshape: np.ndarray, reference_dof: Optional[int] = None) -> np.ndarray:
+def _get_reference_dof(
+    magnitude: NDArray, use_max_amplitude: bool, reference_dof: Optional[Union[int, str]], shape_length: int
+) -> int:
+    """Helper function to determine the reference DOF."""
+    if use_max_amplitude:
+        return int(np.argmax(magnitude))
+    elif reference_dof is not None and isinstance(reference_dof, (int, np.integer)):
+        ref_dof = int(reference_dof)
+        if not 0 <= ref_dof < shape_length:
+            raise ValueError(f"reference_dof {ref_dof} is out of bounds for modeshape of length {shape_length}")
+        return ref_dof
+    else:
+        # Default to first DOF if reference_dof is None
+        return 0
+
+
+def _unwrap_single_modeshape(
+    modeshape: NDArray[np.complex128], use_max_amplitude: bool, reference_dof: Optional[Union[int, str]]
+) -> NDArray[np.complex128]:
+    """Unwrap the phase of a single modeshape."""
+    magnitude = np.abs(modeshape)
+    phase = np.angle(modeshape)
+
+    ref_dof = _get_reference_dof(magnitude, use_max_amplitude, reference_dof, modeshape.shape[0])
+
+    # Unwrap phase relative to reference DOF
+    ref_phase = phase[ref_dof]
+    phase = np.unwrap(phase - ref_phase) + ref_phase
+
+    return cast(NDArray[np.complex128], magnitude * np.exp(1j * phase))
+
+
+def unwrap_modeshape_phase(
+    modeshape: NDArray[np.complex128], reference_dof: Optional[Union[int, str]] = None
+) -> NDArray[np.complex128]:
     """Unwrap the phase of a modeshape or set of modeshapes.
 
     This function unwraps the phase of complex modeshapes to ensure smooth phase transitions
@@ -192,62 +227,23 @@ def unwrap_modeshape_phase(modeshape: np.ndarray, reference_dof: Optional[int] =
     ModalValidator.validate(modeshape)
 
     # Handle the reference_dof parameter
-    if reference_dof is None or isinstance(reference_dof, (int, np.integer)):
-        use_max_amplitude = False
-    elif isinstance(reference_dof, str) and reference_dof.lower() == "max":
+    use_max_amplitude = False
+    if isinstance(reference_dof, str) and reference_dof.lower() == "max":
         use_max_amplitude = True
-    else:
+    elif reference_dof is not None and not isinstance(reference_dof, (int, np.integer)):
         raise ValueError("reference_dof must be an integer or the string 'max'")
 
     if modeshape.ndim == 1:
-        # Get magnitude and phase
-        magnitude = np.abs(modeshape)
-        phase = np.angle(modeshape)
-
-        # Determine reference DOF
-        if use_max_amplitude:
-            reference_dof = np.argmax(magnitude)
-        elif not 0 <= reference_dof < modeshape.shape[0]:
-            raise ValueError(
-                f"reference_dof {reference_dof} is out of bounds for modeshape of length {modeshape.shape[0]}"
-            )
-
-        # Unwrap phase relative to reference DOF
-        ref_phase = phase[reference_dof]
-        phase = np.unwrap(phase - ref_phase) + ref_phase
-
-        # Return complex modeshape with unwrapped phase
-        return magnitude * np.exp(1j * phase)
+        return _unwrap_single_modeshape(modeshape, use_max_amplitude, reference_dof)
 
     # modeshape.ndim == 2
     # Process each mode
-    unwrapped_modes = []
-    for mode in modeshape:
-        # Get magnitude and phase
-        magnitude = np.abs(mode)
-        phase = np.angle(mode)
+    unwrapped_modes = [_unwrap_single_modeshape(mode, use_max_amplitude, reference_dof) for mode in modeshape]
 
-        # Determine reference DOF for this mode
-        if use_max_amplitude:
-            mode_reference_dof = np.argmax(magnitude)
-        else:
-            mode_reference_dof = reference_dof
-            if not 0 <= mode_reference_dof < mode.shape[0]:
-                raise ValueError(
-                    f"reference_dof {mode_reference_dof} is out of bounds for modeshape with {mode.shape[0]} DOFs"
-                )
-
-        # Unwrap phase relative to reference DOF
-        ref_phase = phase[mode_reference_dof]
-        phase = np.unwrap(phase - ref_phase) + ref_phase
-
-        # Store unwrapped mode
-        unwrapped_modes.append(magnitude * np.exp(1j * phase))
-
-    return np.array(unwrapped_modes)
+    return cast(NDArray[np.complex128], np.array(unwrapped_modes))
 
 
-def wrap_modeshape_phase(modeshape: np.ndarray) -> np.ndarray:
+def wrap_modeshape_phase(modeshape: NDArray[np.complex128]) -> NDArray[np.complex128]:
     """Wrap the phase of a modeshape or set of modeshapes to [-π, π].
 
     This function wraps the phase angles of complex modeshapes to ensure they fall
@@ -285,7 +281,7 @@ def wrap_modeshape_phase(modeshape: np.ndarray) -> np.ndarray:
     if modeshape.ndim == 1:
         magnitude = np.abs(modeshape)
         phase = np.angle(modeshape)  # automatically wraps to [-π, π]
-        return magnitude * np.exp(1j * phase)
+        return cast(NDArray[np.complex128], magnitude * np.exp(1j * phase))
 
     # modeshape.ndim == 2
     wrapped_modes = []
@@ -294,4 +290,4 @@ def wrap_modeshape_phase(modeshape: np.ndarray) -> np.ndarray:
         phase = np.angle(mode)  # automatically wraps to [-π, π]
         wrapped_modes.append(magnitude * np.exp(1j * phase))
 
-    return np.array(wrapped_modes)
+    return cast(NDArray[np.complex128], np.array(wrapped_modes))

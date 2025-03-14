@@ -1,7 +1,7 @@
 """Custom types and data classes for modal analysis."""
 
 from dataclasses import dataclass, field
-from typing import NewType, Optional
+from typing import NewType
 
 import numpy as np
 
@@ -29,11 +29,10 @@ class ModalData:
 
     frequencies: np.ndarray
     modeshapes: np.ndarray
-    damping: np.ndarray = field(default_factory=lambda: None)
+    damping: np.ndarray | None = field(default_factory=lambda: np.array([]))
 
-    def __post_init__(self):
-        """Validate the data after initialization."""
-        # Validate frequencies
+    def _validate_frequencies(self) -> None:
+        """Validate frequency data."""
         if not isinstance(self.frequencies, np.ndarray):
             raise TypeError("frequencies must be a numpy array")
         if not np.isreal(self.frequencies).all():
@@ -41,7 +40,8 @@ class ModalData:
         if np.any(self.frequencies <= 0):
             raise ValueError("frequencies must be positive")
 
-        # Validate modeshapes
+    def _validate_modeshapes(self) -> None:
+        """Validate modeshape data."""
         if not isinstance(self.modeshapes, np.ndarray):
             raise TypeError("modeshapes must be a numpy array")
         if self.modeshapes.ndim not in [1, 2]:
@@ -49,20 +49,28 @@ class ModalData:
         if self.frequencies.shape[0] != self.modeshapes.shape[0]:
             raise ValueError("Number of frequencies must match number of modes")
 
-        # Initialize and validate damping
-        if self.damping is None:
+    def _validate_damping(self) -> None:
+        """Validate damping data."""
+        if self.damping is None or len(self.damping) == 0:
             self.damping = np.zeros_like(self.frequencies)
-        else:
-            if not isinstance(self.damping, np.ndarray):
-                raise TypeError("damping must be a numpy array")
-            if not np.isreal(self.damping).all():
-                raise ValueError("damping must be real-valued")
-            if self.damping.shape != self.frequencies.shape:
-                raise ValueError("damping must have same shape as frequencies")
-            if np.any(self.damping < 0):
-                raise ValueError("damping ratios must be non-negative")
-            if np.any(self.damping > 1):
-                raise ValueError("damping ratios must be less than or equal to 1")
+            return
+
+        if not isinstance(self.damping, np.ndarray):
+            raise TypeError("damping must be a numpy array")
+        if not np.isreal(self.damping).all():
+            raise ValueError("damping must be real-valued")
+        if self.damping.shape != self.frequencies.shape:
+            raise ValueError("damping must have same shape as frequencies")
+        if np.any(self.damping < 0):
+            raise ValueError("damping ratios must be non-negative")
+        if np.any(self.damping > 1):
+            raise ValueError("damping ratios must be less than or equal to 1")
+
+    def __post_init__(self) -> None:
+        """Validate the data after initialization."""
+        self._validate_frequencies()
+        self._validate_modeshapes()
+        self._validate_damping()
 
 
 @dataclass
@@ -89,7 +97,7 @@ class ComplexityMetrics:
     cf: np.ndarray
     mpd: np.ndarray
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate the metrics after initialization."""
         shapes = [
             self.mpc.shape,

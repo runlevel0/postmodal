@@ -1,14 +1,15 @@
 """Modal comparison matrix operations."""
 
 from collections.abc import Sequence
-from typing import Optional
+from typing import Optional, cast
 
 import numpy as np
+from numpy.typing import NDArray
 
 from ..validation import ModalValidator
 
 
-def calculate_mac_matrix(phi_1: np.ndarray, phi_2: np.ndarray) -> np.ndarray:
+def calculate_mac_matrix(phi_1: np.ndarray, phi_2: np.ndarray) -> NDArray:
     """Calculate the MAC matrix between two sets of modeshapes.
 
     The Modal Assurance Criterion (MAC) matrix quantifies the correlation between
@@ -35,7 +36,7 @@ def calculate_mac_matrix(phi_1: np.ndarray, phi_2: np.ndarray) -> np.ndarray:
 
     Returns
     -------
-    np.ndarray
+    NDArray
         MAC matrix [n_modes_1 x n_modes_2] with values between 0 and 1
 
     Raises
@@ -50,14 +51,20 @@ def calculate_mac_matrix(phi_1: np.ndarray, phi_2: np.ndarray) -> np.ndarray:
     # "it should only be used for vectors."
     # https://numpy.org/doc/stable/reference/generated/numpy.vdot.html
     if np.iscomplexobj(phi_1) or np.iscomplexobj(phi_2):
-        return np.square(
-            np.abs(np.dot(phi_1, phi_2.conj().T))
-            / (np.linalg.norm(phi_1, axis=1)[:, np.newaxis] * np.linalg.norm(phi_2, axis=1))
+        return cast(
+            NDArray,
+            np.square(
+                np.abs(np.dot(phi_1, phi_2.conj().T))
+                / (np.linalg.norm(phi_1, axis=1)[:, np.newaxis] * np.linalg.norm(phi_2, axis=1))
+            ),
         )
     else:
-        return np.square(
-            np.abs(np.dot(phi_1, phi_2.T))
-            / (np.linalg.norm(phi_1, axis=1)[:, np.newaxis] * np.linalg.norm(phi_2, axis=1))
+        return cast(
+            NDArray,
+            np.square(
+                np.abs(np.dot(phi_1, phi_2.T))
+                / (np.linalg.norm(phi_1, axis=1)[:, np.newaxis] * np.linalg.norm(phi_2, axis=1))
+            ),
         )
 
 
@@ -67,7 +74,7 @@ def calculate_mode_matching_matrix(
     frequencies_2: np.ndarray,
     modeshapes_2: np.ndarray,
     modeshape_weight: float = 1.0,
-) -> np.ndarray:
+) -> NDArray:
     """Calculate mode matching matrix considering frequency and MAC.
 
     Based on Simoen et al., 2014, "Dealing with uncertainty in model updating in damage assessment".
@@ -100,7 +107,7 @@ def calculate_mode_matching_matrix(
 
     Returns
     -------
-    np.ndarray
+    NDArray
         Matching matrix [n_modes_1 x n_modes_2] where lower values indicate better matches
 
     Raises
@@ -111,7 +118,7 @@ def calculate_mode_matching_matrix(
     mac_matrix = calculate_mac_matrix(modeshapes_1, modeshapes_2)
     freq_matrix = np.abs(1 - frequencies_1[:, np.newaxis] / frequencies_2[np.newaxis, :])
 
-    return modeshape_weight * (1 - mac_matrix) + freq_matrix
+    return cast(NDArray, modeshape_weight * (1 - mac_matrix) + freq_matrix)
 
 
 def match_modes(match_matrix: np.ndarray, threshold: float = 0.6) -> tuple[Sequence[int], Sequence[int]]:
@@ -130,7 +137,7 @@ def match_modes(match_matrix: np.ndarray, threshold: float = 0.6) -> tuple[Seque
 
     Returns
     -------
-    tuple[Sequence[int], Sequence[int]]
+    Tuple[Sequence[int], Sequence[int]]
         Indices of matching modes from first and second set
 
     Raises
@@ -180,7 +187,7 @@ def best_match(match_matrix: np.ndarray, threshold: float = 0.6) -> Optional[tup
 
     Returns
     -------
-    Optional[tuple[int, int]]
+    Optional[Tuple[int, int]]
         Indices of best match, or None if no match below threshold
 
     Raises
@@ -196,4 +203,5 @@ def best_match(match_matrix: np.ndarray, threshold: float = 0.6) -> Optional[tup
     if not np.any(match_matrix <= threshold):
         return None
 
-    return np.unravel_index(np.argmin(match_matrix, axis=None), match_matrix.shape)
+    indices = np.unravel_index(np.argmin(match_matrix, axis=None), match_matrix.shape)
+    return (int(indices[0]), int(indices[1]))
