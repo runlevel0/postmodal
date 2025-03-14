@@ -25,9 +25,9 @@ def calculate_mac(phi_1: np.ndarray, phi_2: np.ndarray) -> float:
     Parameters
     ----------
     phi_1 : np.ndarray
-        First modeshape vector
+        First modeshape vector [n_dof]
     phi_2 : np.ndarray
-        Second modeshape vector
+        Second modeshape vector [n_dof]
 
     Returns
     -------
@@ -41,7 +41,4 @@ def calculate_mac(phi_1: np.ndarray, phi_2: np.ndarray) -> float:
     """
     ModalValidator.validate_pair(phi_1, phi_2)
 
-    return (
-        np.abs(np.vdot(phi_1, phi_2)) ** 2
-        / (np.vdot(phi_1, phi_1) * np.vdot(phi_2, phi_2))
-    ).real
+    return (np.abs(np.vdot(phi_1, phi_2)) ** 2 / (np.vdot(phi_1, phi_1) * np.vdot(phi_2, phi_2))).real

@@ -1,15 +1,30 @@
 """Modal comparison matrix operations."""
 
-from typing import Optional, Sequence
+from collections.abc import Sequence
+from typing import Optional
 
 import numpy as np
 
-from ..types import MACValue, Modeshape
 from ..validation import ModalValidator
 
 
 def calculate_mac_matrix(phi_1: np.ndarray, phi_2: np.ndarray) -> np.ndarray:
     """Calculate the MAC matrix between two sets of modeshapes.
+
+    The Modal Assurance Criterion (MAC) matrix quantifies the correlation between
+    all pairs of mode shapes from two sets. Each element (i,j) represents the MAC
+    value between mode i from the first set and mode j from the second set.
+
+    Math:
+    -----
+    .. math::
+        MAC_{ij} = \\frac{ |\\phi_{1i}^H \\phi_{2j}|^2 }{ (\\phi_{1i}^H \\phi_{1i})(\\phi_{2j}^H \\phi_{2j}) }
+
+    Where:
+    - :math:`\\phi_{1i}`: i-th mode shape from first set
+    - :math:`\\phi_{2j}`: j-th mode shape from second set
+    - :math:`^H`: Hermitian transpose
+    - :math:`|...|`: Magnitude of complex number
 
     Parameters
     ----------
@@ -21,7 +36,12 @@ def calculate_mac_matrix(phi_1: np.ndarray, phi_2: np.ndarray) -> np.ndarray:
     Returns
     -------
     np.ndarray
-        MAC matrix [n_modes_1 x n_modes_2]
+        MAC matrix [n_modes_1 x n_modes_2] with values between 0 and 1
+
+    Raises
+    ------
+    ValueError
+        If modeshapes have different shapes
     """
     ModalValidator.validate_pair(phi_1, phi_2)
 
@@ -32,18 +52,12 @@ def calculate_mac_matrix(phi_1: np.ndarray, phi_2: np.ndarray) -> np.ndarray:
     if np.iscomplexobj(phi_1) or np.iscomplexobj(phi_2):
         return np.square(
             np.abs(np.dot(phi_1, phi_2.conj().T))
-            / (
-                np.linalg.norm(phi_1, axis=1)[:, np.newaxis]
-                * np.linalg.norm(phi_2, axis=1)
-            )
+            / (np.linalg.norm(phi_1, axis=1)[:, np.newaxis] * np.linalg.norm(phi_2, axis=1))
         )
     else:
         return np.square(
             np.abs(np.dot(phi_1, phi_2.T))
-            / (
-                np.linalg.norm(phi_1, axis=1)[:, np.newaxis]
-                * np.linalg.norm(phi_2, axis=1)
-            )
+            / (np.linalg.norm(phi_1, axis=1)[:, np.newaxis] * np.linalg.norm(phi_2, axis=1))
         )
 
 
@@ -56,7 +70,20 @@ def calculate_mode_matching_matrix(
 ) -> np.ndarray:
     """Calculate mode matching matrix considering frequency and MAC.
 
-    Based on Simoen et al., 2014, "Dealing with uncertainty in model updating in damage assessment"
+    Based on Simoen et al., 2014, "Dealing with uncertainty in model updating in damage assessment".
+    The matching matrix combines frequency differences and MAC values to find corresponding modes
+    between two sets. A lower value indicates a better match.
+
+    Math:
+    -----
+    .. math::
+        M_{ij} = w(1 - MAC_{ij}) + |1 - f_{1i}/f_{2j}|
+
+    Where:
+    - :math:`MAC_{ij}`: MAC value between modes i and j
+    - :math:`f_{1i}`: Frequency of mode i from first set
+    - :math:`f_{2j}`: Frequency of mode j from second set
+    - :math:`w`: Weight for modeshape contribution
 
     Parameters
     ----------
@@ -74,25 +101,30 @@ def calculate_mode_matching_matrix(
     Returns
     -------
     np.ndarray
-        Matching matrix [n_modes_1 x n_modes_2]
+        Matching matrix [n_modes_1 x n_modes_2] where lower values indicate better matches
+
+    Raises
+    ------
+    ValueError
+        If input arrays have incompatible shapes
     """
     mac_matrix = calculate_mac_matrix(modeshapes_1, modeshapes_2)
-    freq_matrix = np.abs(
-        1 - frequencies_1[:, np.newaxis] / frequencies_2[np.newaxis, :]
-    )
+    freq_matrix = np.abs(1 - frequencies_1[:, np.newaxis] / frequencies_2[np.newaxis, :])
 
     return modeshape_weight * (1 - mac_matrix) + freq_matrix
 
 
-def match_modes(
-    match_matrix: np.ndarray, threshold: float = 0.6
-) -> tuple[Sequence[int], Sequence[int]]:
+def match_modes(match_matrix: np.ndarray, threshold: float = 0.6) -> tuple[Sequence[int], Sequence[int]]:
     """Find best matching modes using matching matrix.
+
+    This function finds pairs of modes that best match based on the matching matrix.
+    It uses a greedy approach to find the best matches below the specified threshold.
+    Each mode can only be matched once.
 
     Parameters
     ----------
     match_matrix : np.ndarray
-        Matching matrix [n_modes_1 x n_modes_2]
+        Matching matrix [n_modes_1 x n_modes_2] where lower values indicate better matches
     threshold : float, optional
         Threshold for acceptable matches, by default 0.6
 
@@ -100,6 +132,11 @@ def match_modes(
     -------
     tuple[Sequence[int], Sequence[int]]
         Indices of matching modes from first and second set
+
+    Raises
+    ------
+    ValueError
+        If matrix contains non-positive values or is not 2D
     """
     if not np.all(match_matrix > 0.0):
         raise ValueError("All matrix values must be positive")
@@ -128,15 +165,16 @@ def match_modes(
     return tuple(matching_modes_1), tuple(matching_modes_2)
 
 
-def best_match(
-    match_matrix: np.ndarray, threshold: float = 0.6
-) -> Optional[tuple[int, int]]:
+def best_match(match_matrix: np.ndarray, threshold: float = 0.6) -> Optional[tuple[int, int]]:
     """Find indices of best matching mode below threshold.
+
+    This function finds the pair of modes with the lowest matching value that is
+    still below the specified threshold. It is used internally by match_modes.
 
     Parameters
     ----------
     match_matrix : np.ndarray
-        Matching matrix [n_modes_1 x n_modes_2]
+        Matching matrix [n_modes_1 x n_modes_2] where lower values indicate better matches
     threshold : float, optional
         Threshold for acceptable matches, by default 0.6
 
@@ -144,6 +182,11 @@ def best_match(
     -------
     Optional[tuple[int, int]]
         Indices of best match, or None if no match below threshold
+
+    Raises
+    ------
+    ValueError
+        If matrix contains non-positive values or is not 2D
     """
     if not np.all(match_matrix > 0.0):
         raise ValueError("All matrix values must be positive")

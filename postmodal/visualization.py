@@ -11,20 +11,25 @@ from matplotlib.ticker import FixedFormatter, FixedLocator
 
 
 def _calculateGridLayout(nPlots: int) -> tuple[int, int]:
-    """
-    Calculate the best number of rows and columns for a given number of plots.
+    """Calculate the best number of rows and columns for a given number of plots.
 
     This function determines the optimal grid layout (number of rows and columns)
     to display a specified number of plots. It uses a heuristic approach to find
     a layout that is as close to a square as possible.
 
-    Parameters:
-    nPlots (int): The number of plots to arrange in a grid.
+    Parameters
+    ----------
+    nPlots : int
+        The number of plots to arrange in a grid.
 
-    Returns:
-    tuple: A tuple containing two integers:
-        - n_row (int): The number of rows in the grid.
-        - n_col (int): The number of columns in the grid.
+    Returns
+    -------
+    tuple[int, int]
+        A tuple containing:
+        - n_row : int
+            The number of rows in the grid.
+        - n_col : int
+            The number of columns in the grid.
     """
     # hack:
     if nPlots == 4:
@@ -44,8 +49,8 @@ def _calculateGridLayout(nPlots: int) -> tuple[int, int]:
 
 def plot_mac_matrix(
     mac_matrix: np.ndarray,
-    x_tick_labels: list,
-    y_tick_labels: list,
+    x_tick_labels: list[str],
+    y_tick_labels: list[str],
     text_color_variable: bool = True,
     invert_scale: bool = False,
     ax: Optional[Axes] = None,
@@ -56,9 +61,9 @@ def plot_mac_matrix(
     ----------
     mac_matrix : np.ndarray
         MAC matrix [n_modes_1 x n_modes_2]
-    x_tick_labels : list
+    x_tick_labels : list[str]
         Labels for x-axis ticks (columns of the MAC matrix)
-    y_tick_labels : list
+    y_tick_labels : list[str]
         Labels for y-axis ticks (rows of the MAC matrix)
     text_color_variable : bool, optional
         Whether to vary text color based on MAC value, by default True
@@ -115,7 +120,18 @@ def plot_mac_matrix(
 
     # Add text annotations
     def _get_text_color(value: float) -> str:
-        """Return text color based on MAC value."""
+        """Return text color based on MAC value.
+
+        Parameters
+        ----------
+        value : float
+            The MAC value to determine text color for
+
+        Returns
+        -------
+        str
+            The text color as a string
+        """
         if invert_scale:
             return "0.8" if value < 0.4 else "0.2"
         else:
@@ -143,12 +159,22 @@ def plot_modeshape_complexity(
 ) -> tuple[Figure, Axes]:
     """Plot the complexity of a modeshape using a polar Argand diagram.
 
-    Args:
-        modeshape (np.ndarray): Complex modeshape vector
-        ax (Optional[Axes], optional): Matplotlib axes to plot on. Defaults to None.
+    Parameters
+    ----------
+    modeshape : np.ndarray
+        Complex modeshape vector
+    ax : Optional[Axes], optional
+        Matplotlib axes to plot on, by default None
 
-    Returns:
-        tuple[Figure, Axes]: The figure and axes containing the complexity plot
+    Returns
+    -------
+    tuple[Figure, Axes]
+        The figure and axes containing the complexity plot
+
+    Raises
+    ------
+    ValueError
+        If the provided axes is not a polar projection
     """
     if ax is None:
         fig, ax = plt.subplots(subplot_kw={"projection": "polar"})
@@ -188,17 +214,27 @@ def plot_modeshape_complexity_grid(
 ) -> tuple[Figure, np.ndarray]:
     """Plot multiple modeshape complexity plots in a grid layout.
 
-    Args:
-        frequencies (np.ndarray): Array of frequencies for each mode
-        modeshapes (np.ndarray): Array of complex modeshapes
-        figsize (Optional[tuple[float, float]], optional): Figure size. Defaults to None.
-        n_row (Optional[int], optional): Number of rows in grid. Defaults to None.
-        n_col (Optional[int], optional): Number of columns in grid. Defaults to None.
-        hspace (float, optional): Horizontal spacing between plots. Defaults to 0.4.
-        wspace (float, optional): Vertical spacing between plots. Defaults to 0.4.
+    Parameters
+    ----------
+    frequencies : np.ndarray
+        Array of frequencies for each mode
+    modeshapes : np.ndarray
+        Array of complex modeshapes
+    figsize : Optional[tuple[float, float]], optional
+        Figure size, by default None
+    n_row : Optional[int], optional
+        Number of rows in grid, by default None
+    n_col : Optional[int], optional
+        Number of columns in grid, by default None
+    hspace : float, optional
+        Horizontal spacing between plots, by default 0.4
+    wspace : float, optional
+        Vertical spacing between plots, by default 0.4
 
-    Returns:
-        tuple[Figure, np.ndarray]: The figure and array of axes containing the complexity plots
+    Returns
+    -------
+    tuple[Figure, np.ndarray]
+        The figure and array of axes containing the complexity plots
     """
     n_modes = len(frequencies)
 

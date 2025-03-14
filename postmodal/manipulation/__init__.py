@@ -1,26 +1,30 @@
-"""Manipulation submodule for modal analysis.
+"""Modeshape manipulation utilities.
+
+This module provides functions for manipulating modeshapes, including
+normalization, phase alignment, and complex-to-real conversion.
 
 .. note::
    The :func:`normalize_modeshape` function is deprecated and will be removed in a future version.
    Use :func:`normalize_modeshape_unit_norm_vector_length` instead.
 """
 
+from .complex_to_real import (
+    calculate_conversion_error,
+    complex_to_real,
+    complex_to_real_batch,
+    optimize_conversion,
+)
 from .normalize import (
     normalize_modeshape,  # deprecated
-    normalize_modeshape_unit_norm_vector_length,
-    normalize_modeshape_unit_norm_max_amplitude,
     normalize_modeshape_reference_dof,
+    normalize_modeshape_unit_norm_max_amplitude,
+    normalize_modeshape_unit_norm_vector_length,
 )
 from .phase import (
-    unwrap_modeshape_phase,
-    wrap_modeshape_phase,
-)
-from .complex_to_real import (
-    cast_modeshape_to_real,
-    cast_modeshape_to_real_average_phase_rotation,
-    cast_modeshape_to_real_phase_corrected,
-    cast_modeshape_to_real_real_part,
-    find_best_fit_angle,
+    align_phase,
+    calculate_phase_distribution,
+    normalize_phase,
+    unwrap_phase,
 )
 
 __all__ = [
@@ -30,12 +34,13 @@ __all__ = [
     "normalize_modeshape_unit_norm_max_amplitude",
     "normalize_modeshape_reference_dof",
     # Phase manipulation
-    "unwrap_modeshape_phase",
-    "wrap_modeshape_phase",
+    "align_phase",
+    "unwrap_phase",
+    "normalize_phase",
+    "calculate_phase_distribution",
     # Complex to real conversion
-    "cast_modeshape_to_real",
-    "cast_modeshape_to_real_average_phase_rotation",
-    "cast_modeshape_to_real_phase_corrected",
-    "cast_modeshape_to_real_real_part",
-    "find_best_fit_angle",
+    "complex_to_real",
+    "complex_to_real_batch",
+    "calculate_conversion_error",
+    "optimize_conversion",
 ]
