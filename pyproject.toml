@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "postmodal"
-version = "0.0.1"
+version = "0.1.0"
 description = "Postprocessing of modal parameters from structural dynamics."
 authors = ["Patrick Simon <mail@patricksimon.info>"]
 repository = "https://github.com/runlevel0/postmodal"
