@@ -16,7 +16,7 @@ def align_phase(
 
     This function aligns the phase of a modeshape by rotating it so that
     the phase at a reference DOF is zero. If no reference DOF is specified,
-    the DOF with the largest magnitude is used.
+    the DOF that minimizes the phase range is used.
 
     Parameters
     ----------
@@ -36,14 +36,29 @@ def align_phase(
     :math:`e^{-i\\phi_{ref}}`, where :math:`\\phi_{ref}` is the phase
     angle at the reference DOF.
     """
-    ref_dof: int
-    # Use DOF with largest magnitude as reference if none provided
-    ref_dof = int(np.argmax(np.abs(modeshape))) if reference_dof is None else reference_dof
+    if reference_dof is not None:
+        # Use specified reference DOF
+        phase_ref = np.angle(modeshape[reference_dof])
+        return cast(NDArray[np.complex128], modeshape * np.exp(-1j * phase_ref))
 
-    # Get phase angle at reference DOF
-    phase_ref = np.angle(modeshape[ref_dof])
+    # Find DOF that minimizes phase range
+    phases = np.angle(modeshape)
+    min_range = float("inf")
+    best_ref_dof = 0
 
-    # Rotate modeshape to align phase
+    for i in range(len(modeshape)):
+        # Try each DOF as reference
+        aligned_phases = phases - phases[i]
+        # Normalize to [-π, π]
+        aligned_phases = np.mod(aligned_phases + np.pi, 2 * np.pi) - np.pi
+        phase_range = np.max(aligned_phases) - np.min(aligned_phases)
+
+        if phase_range < min_range:
+            min_range = phase_range
+            best_ref_dof = i
+
+    # Align using the best reference DOF
+    phase_ref = phases[best_ref_dof]
     return cast(NDArray[np.complex128], modeshape * np.exp(-1j * phase_ref))
 
 
@@ -51,32 +66,20 @@ def unwrap_phase(
     modeshape: NDArray[np.complex128],
     axis: int | None = None,
 ) -> NDArray[np.complex128]:
-    """Unwrap the phase of a modeshape.
-
-    This function unwraps the phase angles of a modeshape to ensure
-    continuous phase variation. Phase unwrapping is useful for
-    analyzing phase distributions and identifying phase jumps.
-
-    Parameters
-    ----------
-    modeshape : np.ndarray
-        Complex modeshape array [n_dof]
-    axis : Optional[int], optional
-        Axis along which to unwrap phase, by default None
-
-    Returns
-    -------
-    np.ndarray
-        Modeshape with unwrapped phase [n_dof]
-
-    Notes
-    -----
-    Phase unwrapping is performed using numpy's unwrap function,
-    which adds or subtracts 2π to ensure phase continuity.
-    """
+    """Unwrap the phase of a modeshape."""
+    # Original phases
     phase = np.angle(modeshape)
-    unwrapped_phase = np.unwrap(phase, axis=0 if axis is None else axis)
-    return cast(NDArray[np.complex128], np.abs(modeshape) * np.exp(1j * unwrapped_phase))
+
+    # Unwrap the phases - ensure we're using the correct axis
+    axis_to_use = 0 if axis is None and phase.ndim > 0 else axis
+    unwrapped_phase = np.unwrap(phase, axis=axis_to_use)
+
+    # Important: After unwrapping, phases may be outside [-π, π]
+    # but we need to convert back to complex numbers
+    magnitude = np.abs(modeshape)
+    result = magnitude * np.exp(1j * unwrapped_phase)
+
+    return cast(NDArray[np.complex128], result)
 
 
 def normalize_phase(
