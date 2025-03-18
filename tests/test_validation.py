@@ -24,7 +24,7 @@ class TestModalValidator:
         """Test validation of invalid modeshapes."""
         # Not a numpy array
         with pytest.raises(TypeError, match="Modeshape must be a numpy array"):
-            ModalValidator.validate([1.0, 2.0, 3.0])
+            ModalValidator.validate([1.0, 2.0, 3.0])  # type: ignore[arg-type]
 
         # 3D array
         with pytest.raises(ValueError, match="Modeshape must be 1D or 2D array"):
@@ -51,7 +51,7 @@ class TestModalValidator:
 
         # Not numpy arrays
         with pytest.raises(TypeError, match="must be a numpy array"):
-            ModalValidator.validate_pair([1.0, 2.0], np.array([3.0, 4.0]))
+            ModalValidator.validate_pair([1.0, 2.0], np.array([3.0, 4.0]))  # type: ignore[arg-type]
 
     def test_validate_modal_data(self) -> None:
         """Test validation of ModalData objects."""
@@ -66,4 +66,4 @@ class TestModalValidator:
 
         # Test with invalid data types
         with pytest.raises(TypeError):
-            validate_modal_data(frequencies={"data": frequencies}, modeshapes=modeshapes)
+            validate_modal_data(frequencies={"data": frequencies}, modeshapes=modeshapes)  # type: ignore[arg-type]
