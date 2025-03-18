@@ -82,6 +82,24 @@ function BuildAndPublish {
     Publish
 }
 
+function DocsTest {
+    <#
+    .SYNOPSIS
+        Test if documentation can be built without warnings or errors
+    #>
+    Write-Host "Testing documentation build..."
+    poetry run mkdocs build -s
+}
+
+function Docs {
+    <#
+    .SYNOPSIS
+        Build and serve the documentation
+    #>
+    Write-Host "Building and serving documentation..."
+    poetry run mkdocs serve
+}
+
 function ShowHelp {
     <#
     .SYNOPSIS
@@ -95,6 +113,8 @@ function ShowHelp {
     Write-Host "  CleanBuild        - Clean build artifacts"
     Write-Host "  Publish           - Publish a release to pypi"
     Write-Host "  BuildAndPublish   - Build and publish"
+    Write-Host "  DocsTest          - Test if documentation can be built without warnings or errors"
+    Write-Host "  Docs              - Build and serve the documentation"
     Write-Host "  ShowHelp          - Show this help information"
 }
 
@@ -112,6 +132,8 @@ switch ($args[0].ToLower()) {
     "clean-build" { CleanBuild }
     "publish" { Publish }
     "build-and-publish" { BuildAndPublish }
+    "docs-test" { DocsTest }
+    "docs" { Docs }
     "help" { ShowHelp }
     default {
         Write-Host "Unknown command: $($args[0])"
