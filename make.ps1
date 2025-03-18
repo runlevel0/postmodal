@@ -106,16 +106,16 @@ function ShowHelp {
         Show help information
     #>
     Write-Host "Available commands:"
-    Write-Host "  Install           - Install the poetry environment and install the pre-commit hooks"
-    Write-Host "  Check             - Run code quality tools"
-    Write-Host "  Test              - Test the code with pytest"
-    Write-Host "  Build             - Build wheel file using poetry"
-    Write-Host "  CleanBuild        - Clean build artifacts"
-    Write-Host "  Publish           - Publish a release to pypi"
-    Write-Host "  BuildAndPublish   - Build and publish"
-    Write-Host "  DocsTest          - Test if documentation can be built without warnings or errors"
-    Write-Host "  Docs              - Build and serve the documentation"
-    Write-Host "  ShowHelp          - Show this help information"
+    Write-Host "  install           - Install the poetry environment and install the pre-commit hooks"
+    Write-Host "  check             - Run code quality tools"
+    Write-Host "  test              - Test the code with pytest"
+    Write-Host "  build             - Build wheel file using poetry"
+    Write-Host "  clean-build       - Clean build artifacts"
+    Write-Host "  publish           - Publish a release to pypi"
+    Write-Host "  build-and-publish - Build and publish"
+    Write-Host "  docs-test         - Test if documentation can be built without warnings or errors"
+    Write-Host "  docs              - Build and serve the documentation"
+    Write-Host "  help              - Show this help information"
 }
 
 # Process command line arguments
