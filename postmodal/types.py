@@ -1,7 +1,7 @@
 """Custom types and data classes for modal analysis."""
 
 from dataclasses import dataclass, field
-from typing import NewType
+from typing import NewType, Union
 
 import numpy as np
 
@@ -29,7 +29,7 @@ class ModalData:
 
     frequencies: np.ndarray
     modeshapes: np.ndarray
-    damping: np.ndarray | None = field(default_factory=lambda: np.array([]))
+    damping: Union[np.ndarray, None] = field(default_factory=lambda: np.array([]))
 
     def _validate_frequencies(self) -> None:
         """Validate frequency data."""
@@ -83,18 +83,12 @@ class ComplexityMetrics:
         Modal Phase Collinearity values [n_modes]
     map : np.ndarray
         Modal Amplitude Proportionality values [n_modes]
-    ipr : np.ndarray
-        Imaginary Part Ratio values [n_modes]
-    cf : np.ndarray
-        Complexity Factor values [n_modes]
     mpd : np.ndarray
         Mean Phase Deviation values [n_modes] in degrees
     """
 
     mpc: np.ndarray
     map: np.ndarray
-    ipr: np.ndarray
-    cf: np.ndarray
     mpd: np.ndarray
 
     def __post_init__(self) -> None:
@@ -102,8 +96,6 @@ class ComplexityMetrics:
         shapes = [
             self.mpc.shape,
             self.map.shape,
-            self.ipr.shape,
-            self.cf.shape,
             self.mpd.shape,
         ]
         if not all(s == shapes[0] for s in shapes):
