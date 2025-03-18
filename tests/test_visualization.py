@@ -1,3 +1,4 @@
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -7,6 +8,8 @@ from postmodal.visualization import (
     plot_modeshape_complexity,
     plot_modeshape_complexity_grid,
 )
+
+matplotlib.use("Agg")  # Use non-interactive backend for testing
 
 
 class TestVisualization:
