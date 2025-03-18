@@ -1,7 +1,7 @@
 """Modal comparison matrix operations."""
 
 from collections.abc import Sequence
-from typing import Optional, cast
+from typing import cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -172,7 +172,7 @@ def match_modes(match_matrix: np.ndarray, threshold: float = 0.6) -> tuple[Seque
     return tuple(matching_modes_1), tuple(matching_modes_2)
 
 
-def best_match(match_matrix: np.ndarray, threshold: float = 0.6) -> Optional[tuple[int, int]]:
+def best_match(match_matrix: np.ndarray, threshold: float = 0.6) -> tuple[int, int] | None:
     """Find indices of best matching mode below threshold.
 
     This function finds the pair of modes with the lowest matching value that is

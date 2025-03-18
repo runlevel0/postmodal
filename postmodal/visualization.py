@@ -1,6 +1,6 @@
 """MAC matrix visualization module."""
 
-from typing import Optional, cast
+from typing import cast
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -54,7 +54,7 @@ def plot_mac_matrix(
     y_tick_labels: list[str],
     text_color_variable: bool = True,
     invert_scale: bool = False,
-    ax: Optional[Axes] = None,
+    ax: Axes | None = None,
 ) -> tuple[Figure, Axes]:
     """Plot the MAC matrix.
 
@@ -156,7 +156,7 @@ def plot_mac_matrix(
 
 def plot_modeshape_complexity(
     modeshape: np.ndarray,
-    ax: Optional[PolarAxes] = None,
+    ax: PolarAxes | None = None,
 ) -> tuple[Figure, PolarAxes]:
     """Plot the complexity of a modeshape using a polar Argand diagram.
 
@@ -208,9 +208,9 @@ def plot_modeshape_complexity(
 def plot_modeshape_complexity_grid(
     frequencies: np.ndarray,
     modeshapes: np.ndarray,
-    figsize: Optional[tuple[float, float]] = None,
-    n_row: Optional[int] = None,
-    n_col: Optional[int] = None,
+    figsize: tuple[float, float] | None = None,
+    n_row: int | None = None,
+    n_col: int | None = None,
     hspace: float = 0.4,
     wspace: float = 0.4,
 ) -> tuple[Figure, np.ndarray]:

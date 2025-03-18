@@ -1,7 +1,5 @@
 """Complex to real modeshape conversion utilities."""
 
-from typing import Optional
-
 import numpy as np
 
 from postmodal.manipulation.phase import align_phase
@@ -10,7 +8,7 @@ from postmodal.manipulation.phase import align_phase
 def complex_to_real(
     modeshape: np.ndarray,
     method: str = "phase",
-    reference_dof: Optional[int] = None,
+    reference_dof: int | None = None,
 ) -> np.ndarray:
     """Convert a complex modeshape to a real-valued modeshape.
 
@@ -61,7 +59,7 @@ def complex_to_real(
 def complex_to_real_batch(
     modeshapes: np.ndarray,
     method: str = "phase",
-    reference_dof: Optional[int] = None,
+    reference_dof: int | None = None,
 ) -> np.ndarray:
     """Convert a batch of complex modeshapes to real-valued modeshapes.
 
@@ -130,7 +128,7 @@ def calculate_conversion_error(
 def optimize_conversion(
     modeshape: np.ndarray,
     method: str = "phase",
-    reference_dof: Optional[int] = None,
+    reference_dof: int | None = None,
 ) -> tuple[np.ndarray, float, float]:
     """Optimize the conversion of a complex modeshape to real.
 

@@ -1,6 +1,6 @@
 """Phase manipulation utilities for modal analysis."""
 
-from typing import Optional, Union, cast
+from typing import cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -10,7 +10,7 @@ from ..validation import ModalValidator
 
 def align_phase(
     modeshape: NDArray[np.complex128],
-    reference_dof: Optional[int] = None,
+    reference_dof: int | None = None,
 ) -> NDArray[np.complex128]:
     """Align the phase of a modeshape to a reference DOF.
 
@@ -49,7 +49,7 @@ def align_phase(
 
 def unwrap_phase(
     modeshape: NDArray[np.complex128],
-    axis: Optional[int] = None,
+    axis: int | None = None,
 ) -> NDArray[np.complex128]:
     """Unwrap the phase of a modeshape.
 
@@ -82,7 +82,7 @@ def unwrap_phase(
 def normalize_phase(
     modeshape: NDArray[np.complex128],
     method: str = "reference",
-    reference_dof: Optional[int] = None,
+    reference_dof: int | None = None,
 ) -> NDArray[np.complex128]:
     """Normalize the phase of a modeshape.
 
@@ -154,12 +154,12 @@ def calculate_phase_distribution(
 
 
 def _get_reference_dof(
-    magnitude: NDArray, use_max_amplitude: bool, reference_dof: Optional[Union[int, str]], shape_length: int
+    magnitude: NDArray, use_max_amplitude: bool, reference_dof: int | str | None, shape_length: int
 ) -> int:
     """Helper function to determine the reference DOF."""
     if use_max_amplitude:
         return int(np.argmax(magnitude))
-    elif reference_dof is not None and isinstance(reference_dof, (int, np.integer)):
+    elif reference_dof is not None and isinstance(reference_dof, int | np.integer):
         ref_dof = int(reference_dof)
         if not 0 <= ref_dof < shape_length:
             raise ValueError(f"reference_dof {ref_dof} is out of bounds for modeshape of length {shape_length}")
@@ -170,7 +170,7 @@ def _get_reference_dof(
 
 
 def _unwrap_single_modeshape(
-    modeshape: NDArray[np.complex128], use_max_amplitude: bool, reference_dof: Optional[Union[int, str]]
+    modeshape: NDArray[np.complex128], use_max_amplitude: bool, reference_dof: int | str | None
 ) -> NDArray[np.complex128]:
     """Unwrap the phase of a single modeshape."""
     magnitude = np.abs(modeshape)
@@ -186,7 +186,7 @@ def _unwrap_single_modeshape(
 
 
 def unwrap_modeshape_phase(
-    modeshape: NDArray[np.complex128], reference_dof: Optional[Union[int, str]] = None
+    modeshape: NDArray[np.complex128], reference_dof: int | str | None = None
 ) -> NDArray[np.complex128]:
     """Unwrap the phase of a modeshape or set of modeshapes.
 
@@ -230,7 +230,7 @@ def unwrap_modeshape_phase(
     use_max_amplitude = False
     if isinstance(reference_dof, str) and reference_dof.lower() == "max":
         use_max_amplitude = True
-    elif reference_dof is not None and not isinstance(reference_dof, (int, np.integer)):
+    elif reference_dof is not None and not isinstance(reference_dof, int | np.integer):
         raise ValueError("reference_dof must be an integer or the string 'max'")
 
     if modeshape.ndim == 1:

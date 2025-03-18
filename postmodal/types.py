@@ -1,7 +1,7 @@
 """Custom types and data classes for modal analysis."""
 
 from dataclasses import dataclass, field
-from typing import NewType, Union
+from typing import NewType
 
 import numpy as np
 
@@ -29,7 +29,7 @@ class ModalData:
 
     frequencies: np.ndarray
     modeshapes: np.ndarray
-    damping: Union[np.ndarray, None] = field(default_factory=lambda: np.array([]))
+    damping: np.ndarray | None = field(default_factory=lambda: np.array([]))
 
     def _validate_frequencies(self) -> None:
         """Validate frequency data."""
