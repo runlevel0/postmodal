@@ -26,6 +26,8 @@ class ModalValidator:
             raise TypeError("Modeshape must be a numpy array")
         if modeshape.ndim not in [1, 2]:
             raise ValueError("Modeshape must be 1D or 2D array")
+        if modeshape.size == 0:
+            raise ValueError("Modeshape array cannot be empty")
 
     @staticmethod
     def validate_pair(phi_1: np.ndarray, phi_2: np.ndarray) -> None:
@@ -43,6 +45,9 @@ class ModalValidator:
         ValueError
             If modeshapes have different shapes
         """
+        # Validate individual modeshapes first
+        ModalValidator.validate(phi_1)
+        ModalValidator.validate(phi_2)
         if phi_1.shape != phi_2.shape:
             raise ValueError("Modeshapes must have the same shape")
 
