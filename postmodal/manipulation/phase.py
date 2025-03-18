@@ -71,7 +71,8 @@ def unwrap_phase(
     phase = np.angle(modeshape)
 
     # Unwrap the phases - ensure we're using the correct axis
-    axis_to_use = 0 if axis is None and phase.ndim > 0 else axis
+    axis_to_use = 0 if axis is None and phase.ndim > 0 else axis if axis is not None else -1
+
     unwrapped_phase = np.unwrap(phase, axis=axis_to_use)
 
     # Important: After unwrapping, phases may be outside [-π, π]
