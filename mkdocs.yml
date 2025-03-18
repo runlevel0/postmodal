@@ -12,12 +12,17 @@ nav:
   - Modules: modules.md
 plugins:
   - search
+  - autorefs
   - mkdocstrings:
       handlers:
         python:
-          setup_commands:
-            - import sys
-            - sys.path.append('../')
+          import:
+            - https://docs.python.org/3/objects.inv
+          options:
+            docstring_style: numpy
+            show_root_heading: true
+            show_source: true
+            show_signature_annotations: true
 theme:
   name: material
   feature:
