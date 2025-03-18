@@ -6,7 +6,56 @@ from .types import ComplexityMetrics
 from .validation import ModalValidator
 
 
-def calculate_mpc(modeshape: np.ndarray) -> np.ndarray:
+def _calculate_mpc_old(mode: np.ndarray) -> float:
+    """Calculate MPC using the original implementation."""
+    mode_centered = mode - np.mean(mode)
+    real_part = mode_centered.real
+    imag_part = mode_centered.imag
+    real_norm_sq = np.sum(real_part**2)
+    imag_norm_sq = np.sum(imag_part**2)
+
+    if imag_norm_sq < 1e-10:
+        return 1.0
+
+    real_imag_product = np.sum(real_part * imag_part)
+    if abs(real_imag_product**2 - real_norm_sq * imag_norm_sq) < 1e-10:
+        return 1.0
+
+    epsilon_mpc = (imag_norm_sq - real_norm_sq) / (2 * real_imag_product)
+    theta_mpc = np.arctan(abs(epsilon_mpc) + np.sign(epsilon_mpc) * np.sqrt(1 + epsilon_mpc**2))
+    sin_sq = np.sin(theta_mpc) ** 2
+    numerator_term = real_norm_sq + (1 / epsilon_mpc) * real_imag_product * (2 * (epsilon_mpc**2 + 1) * sin_sq - 1)
+
+    if abs(real_norm_sq + imag_norm_sq) < 1e-10:
+        return 0.0
+
+    return float(numerator_term / (real_norm_sq + imag_norm_sq))
+
+
+def _calculate_mpc_eigvals(mode: np.ndarray) -> float:
+    """Calculate MPC using eigenvalue decomposition."""
+    real_part = mode.real
+    imag_part = mode.imag
+    Sxx = np.sum(real_part**2)
+    Syy = np.sum(imag_part**2)
+    Sxy = np.sum(real_part * imag_part)
+    A = np.array([[Sxx, Sxy], [Sxy, Syy]])
+    eigvals = np.linalg.eigvals(A)
+    lambda_1, lambda_2 = max(eigvals), min(eigvals)
+    return float((lambda_1 - lambda_2) ** 2 / (lambda_1 + lambda_2) ** 2)
+
+
+def _calculate_mpc_mac(mode: np.ndarray) -> float:
+    """Calculate MPC using MAC formula."""
+    real_part = mode.real
+    imag_part = mode.imag
+    Sxx = np.sum(real_part**2)
+    Syy = np.sum(imag_part**2)
+    Sxy = np.sum(real_part * imag_part)
+    return float(((Sxx - Syy) ** 2 + 4 * Sxy**2) / ((Sxx + Syy) ** 2))
+
+
+def calculate_mpc(modeshape: np.ndarray, method: str = "mac") -> np.ndarray:
     """Calculate Modal Phase Collinearity (MPC) for a modeshape or set of modeshapes.
 
     MPC quantifies the 'realness' of a mode shape by measuring the phase alignment
@@ -18,19 +67,26 @@ def calculate_mpc(modeshape: np.ndarray) -> np.ndarray:
     Math:
     -----
     .. math::
-        MPC_r = \\frac{ \\left| \\sum_{j=1}^{n} Re(\\Phi_{jr}) \\right|^2 }{ \\sum_{j=1}^{n} |\\Phi_{jr}|^2 }
+        MPC(\\phi_j) = \\frac{||Re(\\tilde{\\phi}_j)||_2^2 + ||Im(\\tilde{\\phi}_j)||_2^2}
+        {||Re(\\tilde{\\phi}_j)||_2^2 + \\epsilon_{MPC}^{-1} Re(\\tilde{\\phi}_j^T)Im(\\tilde{\\phi}_j)
+        (2(\\epsilon_{MPC}^2 + 1)\\sin^2(\\theta_{MPC}) - 1)}
 
     Where:
-    - :math:`\\Phi_{jr}`: j-th component of the r-th complex mode shape.
-    - :math:`Re(\\Phi_{jr})`: Real part of :math:`\\Phi_{jr}`.
-    - :math:`n`: Number of DOFs.
-    - :math:`| ... |`: Magnitude (absolute value for scalar, modulus for complex).
+    - :math:`\\tilde{\\phi}_j`: Centered mode shape
+    - :math:`\\epsilon_{MPC}`: MPC epsilon parameter
+    - :math:`\\theta_{MPC}`: MPC angle parameter
+    - :math:`||...||_2^2`: Squared L2 norm
 
     Parameters
     ----------
     modeshape : np.ndarray
         Single modeshape [n_dof] or set of modeshapes [n_modes x n_dof].
         Can be real or complex-valued.
+    method : str, optional
+        Method to use for MPC calculation:
+        - "old": Original implementation using epsilon and theta parameters
+        - "eigenvalue": Implementation using eigenvalue decomposition
+        - "mac": Implementation using Modal Assurance Criterion formula (default)
 
     Returns
     -------
@@ -42,29 +98,25 @@ def calculate_mpc(modeshape: np.ndarray) -> np.ndarray:
     Raises
     ------
     ValueError
-        If the input `modeshape` is not a NumPy array.
+        If the input `modeshape` is not a NumPy array or if method is invalid.
     NotImplementedError
         If the input `modeshape` has dimensions other than 1 or 2.
     """
     ModalValidator.validate(modeshape)
 
+    if method not in ["old", "eigenvalue", "mac"]:
+        raise ValueError('method must be one of "old", "eigenvalue", or "mac"')
+
+    calculate_single_mpc = {
+        "old": _calculate_mpc_old,
+        "eigenvalue": _calculate_mpc_eigvals,
+        "mac": _calculate_mpc_mac,
+    }[method]
+
     if modeshape.ndim == 1:
-        sum_real_parts = np.sum(modeshape.real)
-        numerator = np.abs(sum_real_parts) ** 2
-        denominator = np.sum(np.abs(modeshape) ** 2)
-        mpc_value = numerator / denominator if denominator != 0 else 0.0  # Handle potential division by zero
-        return np.array(mpc_value)  # Return as 0D array for consistency
-
+        return np.array(calculate_single_mpc(modeshape))
     elif modeshape.ndim == 2:
-        mpc_values = []
-        for mode in modeshape:
-            sum_real_parts = np.sum(mode.real)
-            numerator = np.abs(sum_real_parts) ** 2
-            denominator = np.sum(np.abs(mode) ** 2)
-            mpc_value = numerator / denominator if denominator != 0 else 0.0  # Handle potential division by zero
-            mpc_values.append(mpc_value)
-        return np.array(mpc_values)
-
+        return np.array([calculate_single_mpc(mode) for mode in modeshape])
     else:
         raise NotImplementedError(f"modeshape has dimensions: {modeshape.ndim}, expecting 1 or 2.")
 
@@ -130,149 +182,37 @@ def calculate_map(modeshape: np.ndarray) -> np.ndarray:
         raise NotImplementedError(f"modeshape has dimensions: {modeshape.ndim}, expecting 1 or 2.")
 
 
-def calculate_ipr(modeshape: np.ndarray) -> np.ndarray:
-    """Calculate Imaginary Part Ratio (IPR) for a modeshape or set of modeshapes.
-
-    IPR quantifies the relative magnitude of the imaginary part of a mode shape
-    compared to its real part. A lower IPR value (接近 0) indicates a mode shape
-    dominated by its real part, while a higher IPR signifies a more significant
-    imaginary contribution, suggesting greater complexity.
-
-    Math:
-    -----
-    .. math::
-        IPR_r = \\frac{ || Im(\\vec{\\Phi}_r) || }{ || Re(\\vec{\\Phi}_r) || }
-
-    Where:
-    - :math:`\\vec{\\Phi}_r`: The r-th complex mode shape vector.
-    - :math:`Re(\\vec{\\Phi}_r)`: Vector of real parts of :math:`\\vec{\\Phi}_r`.
-    - :math:`Im(\\vec{\\Phi}_r)`: Vector of imaginary parts of :math:`\\vec{\\Phi}_r`.
-    - :math:`|| ... ||`: Vector norm (Euclidean norm - 2-norm).
-
-    Parameters
-    ----------
-    modeshape : np.ndarray
-        Single modeshape [n_dof] or set of modeshapes [n_modes x n_dof].
-        Can be real or complex-valued.
-
-    Returns
-    -------
-    np.ndarray
-        IPR value(s).
-        - Scalar if input is a single modeshape [].
-        - 1D array [n_modes] if input is a set of modeshapes.
-
-    Raises
-    ------
-    TypeError
-        If the input `modeshape` is not a NumPy array.
-    NotImplementedError
-        If the input `modeshape` has dimensions other than 1 or 2.
-    """
-    if not isinstance(modeshape, np.ndarray):
-        raise TypeError("Input modeshape must be a NumPy array.")
-
-    if modeshape.ndim == 1:
-        real_part = modeshape.real
-        imag_part = modeshape.imag
-        denominator_norm = np.linalg.norm(real_part)
-        numerator_norm = np.linalg.norm(imag_part)
-        ipr_value = (
-            numerator_norm / denominator_norm if denominator_norm != 0 else 0.0
-        )  # Handle potential division by zero
-        return np.array(ipr_value)  # Return as 0D array for consistency
-
-    elif modeshape.ndim == 2:
-        ipr_values = []
-        for mode in modeshape:
-            real_part = mode.real
-            imag_part = mode.imag
-            denominator_norm = np.linalg.norm(real_part)
-            numerator_norm = np.linalg.norm(imag_part)
-            ipr_value = (
-                numerator_norm / denominator_norm if denominator_norm != 0 else 0.0
-            )  # Handle potential division by zero
-            ipr_values.append(ipr_value)
-        return np.array(ipr_values)
-
-    else:
-        raise NotImplementedError(f"modeshape has dimensions: {modeshape.ndim}, expecting 1 or 2.")
-
-
-def calculate_cf(modeshape: np.ndarray) -> np.ndarray:
-    """Calculate Complexity Factor (CF) for a modeshape or set of modeshapes.
-
-    CF is related to the Modal Phase Collinearity (MPC) and quantifies the degree of
-    mode shape complexity. It's often defined as CF = 1 - MPC. A higher CF value
-    (接近 1) indicates greater mode shape complexity, while a lower CF (接近 0)
-    suggests a more 'real' mode shape.
-
-    Math:
-    -----
-    .. math::
-        CF_r = 1 - MPC_r = 1 - \\frac{ \\left| \\sum_{j=1}^{n} Re(\\Phi_{jr}) \\right|^2 }{ \\sum_{j=1}^{n} |\\Phi_{jr}|^2 }
-
-    Where:
-    - :math:`MPC_r`: Modal Phase Collinearity for mode r, calculated using `calculate_mpc`.
-
-    Parameters
-    ----------
-    modeshape : np.ndarray
-        Single modeshape [n_dof] or set of modeshapes [n_modes x n_dof].
-        Can be real or complex-valued.
-
-    Returns
-    -------
-    np.ndarray
-        CF value(s).
-        - Scalar if input is a single modeshape [].
-        - 1D array [n_modes] if input is a set of modeshapes.
-
-    Raises
-    ------
-    TypeError
-        If the input `modeshape` is not a NumPy array.
-    NotImplementedError
-        If the input `modeshape` has dimensions other than 1 or 2.
-    """
-    if not isinstance(modeshape, np.ndarray):
-        raise TypeError("Input modeshape must be a NumPy array.")
-
-    mpc_values = calculate_mpc(modeshape)
-
-    if modeshape.ndim == 1:
-        return np.array(1.0 - mpc_values)
-    elif modeshape.ndim == 2:
-        return 1.0 - mpc_values
-    else:
-        raise NotImplementedError(f"modeshape has dimensions: {modeshape.ndim}, expecting 1 or 2.")
-
-
-def calculate_mpd(modeshape: np.ndarray) -> np.ndarray:
+def calculate_mpd(modeshape: np.ndarray, weights: str = "magnitude") -> np.ndarray:
     """Calculate Mean Phase Deviation (MPD) for a modeshape or set of modeshapes.
 
-    MPD quantifies the phase scatter within a mode shape by measuring the average
-    absolute deviation of each component's phase angle from the mean phase angle
-    of the mode. Lower MPD indicates phases are clustered around the mean,
-    suggesting more uniform phase behavior. Higher MPD indicates greater phase dispersion
-    and more complex phase behavior across the mode shape.
+    MPD quantifies the phase scatter within a mode shape by measuring the weighted average
+    of phase deviations from the mean phase angle. The mean phase is determined by solving
+    a total least squares problem using SVD to find the best straight line fit through
+    the mode shape in the complex plane.
 
     Math:
     -----
     .. math::
-        MPD_r = \\frac{1}{n} \\sum_{j=1}^{n} |\\phi_{jr} - \\bar{\\phi}_r|
+        MP(\\phi_j) = \\arctan\\left(\\frac{-V_{12}}{V_{22}}\\right)
+
+        MPD(\\phi_j) = \\frac{\\sum_{o=1}^{n_y} w_o \\arccos\\left|\\frac{Re(\\phi_{jo})V_{22} - Im(\\phi_{jo})V_{12}}{\\sqrt{V_{12}^2 + V_{22}^2}|\\phi_{jo}|}\\right|}{\\sum_{o=1}^{n_y} w_o}
 
     Where:
-    - :math:`\\phi_{jr}`: Phase angle (in radians) of the j-th component of the r-th complex mode shape.
-    - :math:`\\bar{\\phi}_r`: Mean phase angle (in radians) for mode r: :math:`\\bar{\\phi}_r = (1/n) \\sum_{j=1}^{n} \\phi_{jr}`.
-    - :math:`n`: Number of DOFs.
-    - :math:`| ... |`: Absolute value.
+    - :math:`MP(\\phi_j)`: Mean phase angle determined by SVD
+    - :math:`V_{12}, V_{22}`: Elements of the V matrix from SVD of [Re(φj) Im(φj)]
+    - :math:`w_o`: Weighting factors (either |φjo| or 1 for equal weights)
+    - :math:`\\phi_{jo}`: Complex mode shape components
+    - :math:`n_y`: Number of DOFs
 
     Parameters
     ----------
     modeshape : np.ndarray
         Single modeshape [n_dof] or set of modeshapes [n_modes x n_dof].
         Can be real or complex-valued.
+    weights : str, optional
+        Weighting scheme for phase deviations:
+        - "magnitude": weights are the magnitude of each mode shape component (default)
+        - "equal": equal weights for all components
 
     Returns
     -------
@@ -287,29 +227,61 @@ def calculate_mpd(modeshape: np.ndarray) -> np.ndarray:
         If the input `modeshape` is not a NumPy array.
     NotImplementedError
         If the input `modeshape` has dimensions other than 1 or 2.
+    ValueError
+        If `weights` is not one of "magnitude" or "equal".
     """
     if not isinstance(modeshape, np.ndarray):
         raise TypeError("Input modeshape must be a NumPy array.")
 
+    if weights not in ["magnitude", "equal"]:
+        raise ValueError('weights must be either "magnitude" or "equal"')
+
+    def calculate_single_mpd(mode: np.ndarray) -> float:
+        # Form matrix with real and imaginary parts
+        A = np.column_stack((mode.real, mode.imag))
+
+        # Compute SVD
+        U, S, Vh = np.linalg.svd(A)
+        V = Vh.T  # Convert to V matrix
+
+        # Extract V12 and V22
+        V12, V22 = V[0, 1], V[1, 1]
+
+        # Calculate weights based on chosen scheme
+        if weights == "magnitude":
+            weights_array = np.abs(mode).astype(np.float64)
+        else:  # equal weights
+            weights_array = np.ones(len(mode), dtype=np.float64)
+
+        # Calculate denominator term
+        denom_term = np.sqrt(V12**2 + V22**2)
+
+        # Calculate phase deviations for each component
+        phase_deviations = np.zeros(len(mode), dtype=np.float64)
+        for i, (phi, w) in enumerate(zip(mode, weights_array, strict=False)):
+            if w == 0:  # Skip zero components
+                continue
+
+            # Calculate numerator term
+            num_term = (phi.real * V22 - phi.imag * V12) / (denom_term * w)
+
+            # Ensure argument is in [-1, 1] for arccos
+            num_term = np.clip(num_term, -1.0, 1.0)
+
+            # Calculate phase deviation
+            phase_deviations[i] = np.arccos(np.abs(num_term))
+
+        # Calculate weighted average
+        if np.sum(weights_array) == 0:
+            return 0.0
+
+        mpd_radians = float(np.sum(weights_array * phase_deviations) / np.sum(weights_array))
+        return float(np.degrees(mpd_radians))
+
     if modeshape.ndim == 1:
-        phase_angles = np.angle(modeshape)  # radians
-        mean_phase_angle = np.mean(phase_angles)
-        deviations = np.abs(phase_angles - mean_phase_angle)
-        mpd_value_radians = np.mean(deviations)
-        mpd_value_degrees = np.degrees(mpd_value_radians)  # Convert to degrees for interpretability
-        return np.array(mpd_value_degrees)  # Return as 0D array for consistency
-
+        return np.array(calculate_single_mpd(modeshape))
     elif modeshape.ndim == 2:
-        mpd_values_degrees = []
-        for mode in modeshape:
-            phase_angles = np.angle(mode)  # radians
-            mean_phase_angle = np.mean(phase_angles)
-            deviations = np.abs(phase_angles - mean_phase_angle)
-            mpd_value_radians = np.mean(deviations)
-            mpd_value_degrees = np.degrees(mpd_value_radians)  # Convert to degrees for interpretability
-            mpd_values_degrees.append(mpd_value_degrees)
-        return np.array(mpd_values_degrees)
-
+        return np.array([calculate_single_mpd(mode) for mode in modeshape])
     else:
         raise NotImplementedError(f"modeshape has dimensions: {modeshape.ndim}, expecting 1 or 2.")
 
@@ -320,8 +292,6 @@ def calculate_complexity_metrics(modeshape: np.ndarray) -> ComplexityMetrics:
     This function computes all available complexity metrics:
     - Modal Phase Collinearity (MPC)
     - Modal Amplitude Proportionality (MAP)
-    - Imaginary Part Ratio (IPR)
-    - Complexity Factor (CF)
     - Mean Phase Deviation (MPD)
 
     Parameters
@@ -346,15 +316,11 @@ def calculate_complexity_metrics(modeshape: np.ndarray) -> ComplexityMetrics:
     # Calculate all metrics
     mpc_values = calculate_mpc(modeshape)
     map_values = calculate_map(modeshape)
-    ipr_values = calculate_ipr(modeshape)
-    cf_values = calculate_cf(modeshape)
     mpd_values = calculate_mpd(modeshape)
 
     # Return as ComplexityMetrics container
     return ComplexityMetrics(
         mpc=mpc_values,
         map=map_values,
-        ipr=ipr_values,
-        cf=cf_values,
         mpd=mpd_values,
     )

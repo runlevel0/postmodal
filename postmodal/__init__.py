@@ -8,9 +8,7 @@ from .comparison.matrix import (
     match_modes,
 )
 from .complexity import (
-    calculate_cf,
     calculate_complexity_metrics,
-    calculate_ipr,
     calculate_map,
     calculate_mpc,
     calculate_mpd,
@@ -58,8 +56,6 @@ __all__ = [
     # Complexity metrics
     "calculate_mpc",
     "calculate_map",
-    "calculate_ipr",
-    "calculate_cf",
     "calculate_mpd",
     "calculate_complexity_metrics",
     # Comparison
