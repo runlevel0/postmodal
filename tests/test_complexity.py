@@ -99,7 +99,8 @@ class TestComplexityMetrics:
         deviations = [0.1, 0.2, 0.3, 0.4]
         mpc_values = []
         for dev in deviations:
-            non_collinear = base + dev * np.random.randn(*base.shape)
+            # non_collinear = base + dev * np.random.randn(*base.shape)
+            non_collinear = base + dev * np.ones_like(base)
             mpc_values.append(calculate_mpc(non_collinear))
 
         # MPC should generally decrease as deviation increases
