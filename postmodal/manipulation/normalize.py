@@ -10,9 +10,9 @@ from ..validation import ModalValidator
 def normalize_modeshape(modeshape: np.ndarray) -> np.ndarray:
     """Normalize a single modeshape or set of modeshapes (real part only).
 
-    .. deprecated:: 1.0.0
-       Use :func:`normalize_modeshape_unit_norm_vector_length` instead, which supports both real and complex modeshapes.
-       This function will be removed in a future version.
+    !!! warning "Deprecated since 1.0.0"
+        Use `normalize_modeshape_unit_norm_vector_length()` instead, which supports both real and complex modeshapes.
+        This function will be removed in a future version.
 
     This function normalizes only the real part of the modeshape(s) to unit norm.
     For a single modeshape, the 2-norm is used.
@@ -51,14 +51,14 @@ def normalize_modeshape_unit_norm_vector_length(modeshape: np.ndarray) -> np.nda
     becomes unity (length of 1). This is a mathematically simple and common method for general mode shape normalization,
     especially when focusing on the shape itself rather than physical scaling. Works for both real and complex mode shapes.
 
-    Math:
-    -----
-    For a mode shape :math:`\\vec{\\Phi}_r`, the normalized mode shape :math:`\\vec{\\Phi}_{r, normalized}` is:
 
-    .. math::
+    For a mode shape $\\vec{\\Phi}_r$, the normalized mode shape $\\vec{\\Phi}_{r, normalized}$ is:
+
+    $$
         \\vec{\\Phi}_{r, normalized} = \\frac{\\vec{\\Phi}_r}{||\\vec{\\Phi}_r||_2}
+    $$
 
-    Where :math:`||\\vec{\\Phi}_r||_2` is the Euclidean norm (2-norm) of the mode shape vector.
+    Where $||\\vec{\\Phi}_r||_2$ is the Euclidean norm (2-norm) of the mode shape vector.
 
     Parameters
     ----------
@@ -95,13 +95,13 @@ def normalize_modeshape_unit_norm_max_amplitude(modeshape: np.ndarray) -> np.nda
     value is normalized to unity (magnitude of 1). This method emphasizes the largest displacement component and
     is useful when you want to scale mode shapes based on their peak amplitude. Works for both real and complex mode shapes.
 
-    Math:
-    -----
-    For a mode shape :math:`\\vec{\\Phi}_r`, let :math:`\\Phi_{max, r}` be the component with the maximum absolute value in :math:`\\vec{\\Phi}_r`.
-    The normalized mode shape :math:`\\vec{\\Phi}_{r, normalized}` is:
 
-    .. math::
+    For a mode shape $\\vec{\\Phi}_r$, let $\\Phi_{max, r}$ be the component with the maximum absolute value in $\\vec{\\Phi}_r$.
+    The normalized mode shape $\\vec{\\Phi}_{r, normalized}$ is:
+
+    $$
         \\vec{\\Phi}_{r, normalized} = \\frac{\\vec{\\Phi}_r}{\\Phi_{max, r}}
+    $$
 
     Note: In case of multiple components having the same maximum magnitude, the first encountered component with maximum magnitude is used as the reference.
 
@@ -141,15 +141,15 @@ def normalize_modeshape_reference_dof(modeshape: np.ndarray, ref_dof_index: int)
     relative to a specific point on the structure, often a sensor location in experimental modal analysis.
     Works for both real and complex mode shapes.
 
-    Math:
-    -----
-    For a mode shape :math:`\\vec{\\Phi}_r` and a chosen reference DOF index `k` (ref_dof_index),
-    the normalized mode shape :math:`\\vec{\\Phi}_{r, normalized}` is:
 
-    .. math::
+    For a mode shape $\\vec{\\Phi}_r$ and a chosen reference DOF index `k` (ref_dof_index),
+    the normalized mode shape $\\vec{\\Phi}_{r, normalized}$ is:
+
+    $$
         \\vec{\\Phi}_{r, normalized} = \\frac{\\vec{\\Phi}_r}{\\Phi_{kr}}
+    $$
 
-    Where :math:`\\Phi_{kr}` is the component of the mode shape vector at the reference DOF index `k`.
+    Where $\\Phi_{kr}$ is the component of the mode shape vector at the reference DOF index `k`.
 
     Parameters
     ----------

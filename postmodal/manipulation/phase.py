@@ -33,7 +33,7 @@ def align_phase(
     Notes
     -----
     The phase alignment is achieved by multiplying the modeshape by
-    :math:`e^{-i\\phi_{ref}}`, where :math:`\\phi_{ref}` is the phase
+    $e^{-i\\phi_{ref}}$, where $\\phi_{ref}$ is the phase
     angle at the reference DOF.
     """
     if reference_dof is not None:
@@ -198,14 +198,14 @@ def unwrap_modeshape_phase(
     relative to a reference DOF. The unwrapping process removes artificial discontinuities
     in the phase angle that occur when the phase wraps from +π to -π or vice versa.
 
-    Math:
-    -----
-    For a mode shape :math:`\\vec{\\Phi}_r`, the phase-unwrapped mode shape is:
 
-    .. math::
+    For a mode shape $\\vec{\\Phi}_r$, the phase-unwrapped mode shape is:
+
+    $$
         \\vec{\\Phi}_{r, unwrapped} = |\\vec{\\Phi}_r| e^{j\\theta_{unwrapped}}
+    $$
 
-    Where :math:`\\theta_{unwrapped}` is the unwrapped phase angle relative to the reference DOF.
+    Where $\\theta_{unwrapped}$ is the unwrapped phase angle relative to the reference DOF.
 
     Parameters
     ----------
@@ -254,14 +254,14 @@ def wrap_modeshape_phase(modeshape: NDArray[np.complex128]) -> NDArray[np.comple
     within the principal value range [-π, π]. This is useful when you want to
     standardize the phase representation or compare phases directly.
 
-    Math:
-    -----
-    For a mode shape :math:`\\vec{\\Phi}_r`, the phase-wrapped mode shape is:
 
-    .. math::
+    For a mode shape $\\vec{\\Phi}_r$, the phase-wrapped mode shape is:
+
+    $$
         \\vec{\\Phi}_{r, wrapped} = |\\vec{\\Phi}_r| e^{j\\theta_{wrapped}}
+    $$
 
-    Where :math:`\\theta_{wrapped}` is the wrapped phase angle in [-π, π].
+    Where $\\theta_{wrapped}$ is the wrapped phase angle in [-π, π].
 
     Parameters
     ----------

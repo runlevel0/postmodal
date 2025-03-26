@@ -64,18 +64,19 @@ def calculate_mpc(modeshape: np.ndarray, method: str = "mac") -> np.ndarray:
     A lower MPC value (≈ 0) suggests a more complex mode shape with scattered phases,
     indicating non-proportional damping or mode coupling.
 
-    Math:
-    -----
-    .. math::
+
+    $$
         MPC(\\phi_j) = \\frac{||Re(\\tilde{\\phi}_j)||_2^2 + ||Im(\\tilde{\\phi}_j)||_2^2}
         {||Re(\\tilde{\\phi}_j)||_2^2 + \\epsilon_{MPC}^{-1} Re(\\tilde{\\phi}_j^T)Im(\\tilde{\\phi}_j)
         (2(\\epsilon_{MPC}^2 + 1)\\sin^2(\\theta_{MPC}) - 1)}
+    $$
+
 
     Where:
-    - :math:`\\tilde{\\phi}_j`: Centered mode shape
-    - :math:`\\epsilon_{MPC}`: MPC epsilon parameter
-    - :math:`\\theta_{MPC}`: MPC angle parameter
-    - :math:`||...||_2^2`: Squared L2 norm
+    - $\\tilde{\\phi}_j$: Centered mode shape
+    - $\\epsilon_{MPC}$: MPC epsilon parameter
+    - $\\theta_{MPC}$: MPC angle parameter
+    - $||...||_2^2$: Squared L2 norm
 
     Parameters
     ----------
@@ -130,16 +131,16 @@ def calculate_map(modeshape: np.ndarray) -> np.ndarray:
     A lower MAP value (< 1) indicates a deviation from real amplitude proportionality,
     suggesting a more complex amplitude distribution and significant imaginary components.
 
-    Math:
-    -----
-    .. math::
+
+    $$
         MAP_r = \\frac{ \\sum_{j=1}^{n} |Re(\\Phi_{jr})| }{ \\sum_{j=1}^{n} |\\Phi_{jr}| }
+    $$
 
     Where:
-    - :math:`\\Phi_{jr}`: j-th component of the r-th complex mode shape.
-    - :math:`Re(\\Phi_{jr})`: Real part of :math:`\\Phi_{jr}`.
-    - :math:`n`: Number of DOFs.
-    - :math:`| ... |`: Magnitude (absolute value for scalar, modulus for complex).
+    - $\\Phi_{jr}$: j-th component of the r-th complex mode shape.
+    - $Re(\\Phi_{jr})$: Real part of $\\Phi_{jr}$.
+    - $n$: Number of DOFs.
+    - $| ... |$: Magnitude (absolute value for scalar, modulus for complex).
 
     Parameters
     ----------
@@ -190,19 +191,19 @@ def calculate_mpd(modeshape: np.ndarray, weights: str = "magnitude") -> np.ndarr
     a total least squares problem using SVD to find the best straight line fit through
     the mode shape in the complex plane.
 
-    Math:
-    -----
-    .. math::
+
+    $$
         MP(\\phi_j) = \\arctan\\left(\\frac{-V_{12}}{V_{22}}\\right)
 
         MPD(\\phi_j) = \\frac{\\sum_{o=1}^{n_y} w_o \\arccos\\left|\\frac{Re(\\phi_{jo})V_{22} - Im(\\phi_{jo})V_{12}}{\\sqrt{V_{12}^2 + V_{22}^2}|\\phi_{jo}|}\\right|}{\\sum_{o=1}^{n_y} w_o}
+    $$
 
     Where:
-    - :math:`MP(\\phi_j)`: Mean phase angle determined by SVD
-    - :math:`V_{12}, V_{22}`: Elements of the V matrix from SVD of [Re(φj) Im(φj)]
-    - :math:`w_o`: Weighting factors (either |φjo| or 1 for equal weights)
-    - :math:`\\phi_{jo}`: Complex mode shape components
-    - :math:`n_y`: Number of DOFs
+    - $MP(\\phi_j)$: Mean phase angle determined by SVD
+    - $V_{12}, V_{22}$: Elements of the V matrix from SVD of [Re(φj) Im(φj)]
+    - $w_o$: Weighting factors (either |φjo| or 1 for equal weights)
+    - $\\phi_{jo}$: Complex mode shape components
+    - $n_y$: Number of DOFs
 
     Parameters
     ----------

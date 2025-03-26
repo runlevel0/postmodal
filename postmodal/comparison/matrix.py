@@ -16,16 +16,16 @@ def calculate_mac_matrix(phi_1: np.ndarray, phi_2: np.ndarray) -> NDArray:
     all pairs of mode shapes from two sets. Each element (i,j) represents the MAC
     value between mode i from the first set and mode j from the second set.
 
-    Math:
-    -----
-    .. math::
+
+    $$
         MAC_{ij} = \\frac{ |\\phi_{1i}^H \\phi_{2j}|^2 }{ (\\phi_{1i}^H \\phi_{1i})(\\phi_{2j}^H \\phi_{2j}) }
+    $$
 
     Where:
-    - :math:`\\phi_{1i}`: i-th mode shape from first set
-    - :math:`\\phi_{2j}`: j-th mode shape from second set
-    - :math:`^H`: Hermitian transpose
-    - :math:`|...|`: Magnitude of complex number
+    - $\\phi_{1i}$: i-th mode shape from first set
+    - $\\phi_{2j}$: j-th mode shape from second set
+    - $^H$: Hermitian transpose
+    - $|...|$: Magnitude of complex number
 
     Parameters
     ----------
@@ -81,16 +81,16 @@ def calculate_mode_matching_matrix(
     The matching matrix combines frequency differences and MAC values to find corresponding modes
     between two sets. A lower value indicates a better match.
 
-    Math:
-    -----
-    .. math::
+
+    $$
         M_{ij} = w(1 - MAC_{ij}) + |1 - f_{1i}/f_{2j}|
+    $$
 
     Where:
-    - :math:`MAC_{ij}`: MAC value between modes i and j
-    - :math:`f_{1i}`: Frequency of mode i from first set
-    - :math:`f_{2j}`: Frequency of mode j from second set
-    - :math:`w`: Weight for modeshape contribution
+    - $MAC_{ij}$: MAC value between modes i and j
+    - $f_{1i}$: Frequency of mode i from first set
+    - $f_{2j}$: Frequency of mode j from second set
+    - $w$: Weight for modeshape contribution
 
     Parameters
     ----------

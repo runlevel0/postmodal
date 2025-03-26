@@ -3,12 +3,12 @@
 This module provides functions for manipulating modeshapes, including
 normalization, phase alignment, and complex-to-real conversion.
 
-.. note::
-   The :func:`normalize_modeshape` function is deprecated and will be removed in a future version.
-   Use :func:`normalize_modeshape_unit_norm_vector_length` instead.
+!!! note
+    The `normalize_modeshape()` function is deprecated and will be removed in a future version.
+    Use `normalize_modeshape_unit_norm_vector_length()` instead.
 """
 
-from .complex_to_real import (
+from .conversion import (
     calculate_conversion_error,
     complex_to_real,
     complex_to_real_batch,
